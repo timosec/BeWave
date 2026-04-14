@@ -1,0 +1,94 @@
+{
+  "title": "BeWave",
+  "config": {
+    "step": {
+      "user": {
+        "title": "BeWave hub",
+        "description": "Voer het IP-adres of de hostnaam van je BeWave hub in.",
+        "data": {
+          "host": "BeWave host"
+        }
+      },
+      "device_menu": {
+        "title": "BeWave schakelaars",
+        "description": "Geconfigureerde schakelaars: {device_count}. Voeg nu een schakelaar toe, of rond af zodra er minimaal \u00e9\u00e9n schakelaar bestaat.",
+        "data": {
+          "action": "Actie"
+        }
+      },
+      "add_device": {
+        "title": "Schakelaar toevoegen",
+        "description": "Vul de gegevens van de schakelaar in. 'Command to send' is de exacte TCP-tekst die Home Assistant naar BeWave stuurt. Voorbeeld: {command_example}. Laat de feedbackvelden leeg voor alleen momentary gedrag.",
+        "data": {
+          "id": "Schakelaar-ID",
+          "name": "Naam",
+          "command_on": "Command to send",
+          "on_message": "Feedback bericht voor AAN",
+          "off_message": "Feedback bericht voor UIT",
+          "listen_port": "Luisterpoort",
+          "momentary_reset_ms": "Momentary reset vertraging (ms)"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Vul een geldige host of IP-adres in.",
+      "at_least_one_device": "Voeg minimaal \u00e9\u00e9n schakelaar toe voordat je afrondt.",
+      "invalid_device": "Controleer de velden van de schakelaar. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt."
+    },
+    "abort": {
+      "already_configured": "Deze BeWave hub is al geconfigureerd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "BeWave schakelaars beheren",
+        "description": "Geconfigureerde schakelaars: {device_count}. Voeg schakelaars toe, wijzig ze of verwijder ze.",
+        "data": {
+          "action": "Actie"
+        }
+      },
+      "add_device": {
+        "title": "Schakelaar toevoegen",
+        "description": "Vul de gegevens van de schakelaar in. 'Command to send' is de exacte TCP-tekst die Home Assistant naar BeWave stuurt. Voorbeeld: {command_example}.",
+        "data": {
+          "id": "Schakelaar-ID",
+          "name": "Naam",
+          "command_on": "Command to send",
+          "on_message": "Feedback bericht voor AAN",
+          "off_message": "Feedback bericht voor UIT",
+          "listen_port": "Luisterpoort",
+          "momentary_reset_ms": "Momentary reset vertraging (ms)"
+        }
+      },
+      "select_edit_device": {
+        "title": "Kies schakelaar",
+        "data": {
+          "device_id": "Schakelaar"
+        }
+      },
+      "edit_device": {
+        "title": "Schakelaar wijzigen",
+        "description": "Wijzig de gegevens van de schakelaar. 'Command to send' moet overeenkomen met de trigger die in BeWave is geconfigureerd. Voorbeeld: {command_example}.",
+        "data": {
+          "id": "Schakelaar-ID",
+          "name": "Naam",
+          "command_on": "Command to send",
+          "on_message": "Feedback bericht voor AAN",
+          "off_message": "Feedback bericht voor UIT",
+          "listen_port": "Luisterpoort",
+          "momentary_reset_ms": "Momentary reset vertraging (ms)"
+        }
+      },
+      "select_delete_device": {
+        "title": "Schakelaar verwijderen",
+        "data": {
+          "device_id": "Schakelaar"
+        }
+      }
+    },
+    "error": {
+      "invalid_device": "Controleer de velden van de schakelaar. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt."
+    }
+  }
+}

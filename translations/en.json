@@ -1,0 +1,94 @@
+{
+  "title": "BeWave",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect BeWave hub",
+        "description": "Configure the IP address or hostname of the BeWave hub.",
+        "data": {
+          "host": "Host or IP address"
+        }
+      },
+      "device_menu": {
+        "title": "Add switches",
+        "description": "Configured switches: {device_count}. You can add a switch now, or finish setup once at least one switch exists.",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_device": {
+        "title": "Add switch",
+        "description": "Create one BeWave switch. 'Command to send' is the exact TCP text Home Assistant sends to BeWave. Example: {command_example}. Leave feedback fields empty for momentary-only behavior.",
+        "data": {
+          "id": "Switch ID",
+          "name": "Name",
+          "command_on": "Command to send",
+          "on_message": "Feedback message for ON",
+          "off_message": "Feedback message for OFF",
+          "listen_port": "Listen port",
+          "momentary_reset_ms": "Momentary reset delay (ms)"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Enter a valid host or IP address.",
+      "at_least_one_device": "Add at least one switch before finishing setup.",
+      "invalid_device": "Check the switch fields. Name and command are required, and feedback must contain both ON and OFF messages if used."
+    },
+    "abort": {
+      "already_configured": "This BeWave hub is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage switches",
+        "description": "Configured switches: {device_count}. Add, edit, or remove switches.",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_device": {
+        "title": "Add switch",
+        "description": "Create one BeWave switch. 'Command to send' is the exact TCP text Home Assistant sends to BeWave. Example: {command_example}.",
+        "data": {
+          "id": "Switch ID",
+          "name": "Name",
+          "command_on": "Command to send",
+          "on_message": "Feedback message for ON",
+          "off_message": "Feedback message for OFF",
+          "listen_port": "Listen port",
+          "momentary_reset_ms": "Momentary reset delay (ms)"
+        }
+      },
+      "select_edit_device": {
+        "title": "Select switch to edit",
+        "data": {
+          "device_id": "Switch"
+        }
+      },
+      "edit_device": {
+        "title": "Edit switch",
+        "description": "Edit the switch details. 'Command to send' should match the trigger configured in BeWave. Example: {command_example}.",
+        "data": {
+          "id": "Switch ID",
+          "name": "Name",
+          "command_on": "Command to send",
+          "on_message": "Feedback message for ON",
+          "off_message": "Feedback message for OFF",
+          "listen_port": "Listen port",
+          "momentary_reset_ms": "Momentary reset delay (ms)"
+        }
+      },
+      "select_delete_device": {
+        "title": "Select switch to remove",
+        "data": {
+          "device_id": "Switch"
+        }
+      }
+    },
+    "error": {
+      "invalid_device": "Check the switch fields. Name and command are required, and feedback must contain both ON and OFF messages if used."
+    }
+  }
+}
