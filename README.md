@@ -18,8 +18,6 @@ For each zone, configure:
 The integration still uses raw TCP under the hood, matching the original Homebridge plugin behavior:
 
 - outgoing command to `<host>:5000`
-- CRLF line endings
-- short-lived TCP connection per trigger
 - push feedback from BeWave back into Home Assistant
 
 ## Installation
