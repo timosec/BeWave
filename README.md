@@ -44,12 +44,12 @@ First, configure the first zone:
 <img width="727" height="967" alt="image" src="https://github.com/user-attachments/assets/76f1181a-90f0-4d20-aad6-cae9a93008fc" />
 
 1: Zone name</br>
-2: Command to send to the Bewave hub
-3: Status (ON) – used to receive the ON state from the Bewave hub
+2: Command to send to the Bewave hub</br>
+3: Status (ON) – used to receive the ON state from the Bewave hub</br>
 5: Status (OFF) – used to receive the OFF state from the Bewave hub
 
 
 <img width="730" height="449" alt="image" src="https://github.com/user-attachments/assets/1e29a376-2fb0-4ee3-9797-db2ac4e5dcb0" />
 
-1: To add an new zone 
+1: To add an new zone </br>
 2: to save the zone
