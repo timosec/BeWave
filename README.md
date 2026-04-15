@@ -57,5 +57,5 @@ First, configure the first zone:
 
 ## Settings in the BeWave Hub: 
 
-<img width="600" height="1304" alt="image" src="https://github.com/user-attachments/assets/dd5bbaac-d990-49a1-83c0-d8450676ff2d" />
+<img width="600" height="1203" alt="image" src="https://github.com/user-attachments/assets/d023a499-7045-416a-a7fd-33854acb9042" />
 
