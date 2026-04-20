@@ -1,5 +1,4 @@
 {
-  "name": "BeWave",
-  "render_readme": true,
+  "name": "BeWave"
   "homeassistant": "2025.1.0",
 }
