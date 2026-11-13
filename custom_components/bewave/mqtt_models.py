@@ -47,6 +47,7 @@ FIELDS = (
     Field("alarm_detected", "Alarm", "binary_sensor", "problem"),
     Field("warning_alarm", "Waarschuwing", "binary_sensor", "problem"),
     Field("block_unblock", "Geblokkeerd", "binary_sensor"),
+    Field("on_off", "Schakelaar", "switch"),
 )
 FIELD_BY_KEY = {item.key: item for item in FIELDS}
 METADATA = {"name", "type", "fw_version"}
@@ -126,7 +127,7 @@ class MqttDevice:
     values: dict[str, Any] = field(default_factory=dict)
     updated: dict[str, float] = field(default_factory=dict)
 
-    def update(self, payload: dict[str, Any], now: float) -> None:
+    def update(self, payload: dict[str, Any], now: float | None) -> None:
         """Merge partial updates without refreshing absent measurements."""
         if isinstance(payload.get("name"), str) and payload["name"].strip():
             self.name = payload["name"].strip()[:200]
@@ -134,6 +135,11 @@ class MqttDevice:
             self.model = payload["type"][:100]
         for key in FIELD_BY_KEY:
             if key in payload:
+                if now is None:
+                    # A broker-retained snapshot has no trustworthy sample age.
+                    # Discover the field, but never overwrite a live reading.
+                    self.values.setdefault(key, None)
+                    continue
                 value = payload[key]
                 # Telemetry is scalar. Do not persist nested/arbitrary data.
                 if value is not None and not isinstance(value, (str, int, float, bool)):

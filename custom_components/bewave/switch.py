@@ -11,7 +11,9 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 
-from .const import DOMAIN
+from .const import CONF_TRANSPORT, DOMAIN, TRANSPORT_MQTT
+from .mqtt_entity import BeWaveMqttEntity, async_setup_mqtt_platform
+from .mqtt_models import binary_value
 from .tcp import BeWaveHub
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,8 +27,34 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up BeWave switch entities."""
+    if entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
+        async_setup_mqtt_platform(
+            hass, entry, async_add_entities, "switch", BeWaveMqttSwitch
+        )
+        return
     hub: BeWaveHub = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(BeWaveSwitch(hub, device.id) for device in hub.devices)
+
+
+class BeWaveMqttSwitch(BeWaveMqttEntity, SwitchEntity):
+    """Switch a BE WAVE component that reports the on_off capability."""
+
+    @property
+    def available(self) -> bool:
+        return (
+            super().available
+            and binary_value(self.device.values.get("on_off")) is not None
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        return binary_value(self.device.values.get("on_off"))
+
+    async def async_turn_on(self, **kwargs) -> None:
+        await self.hub.async_set_output(self.device, True)
+
+    async def async_turn_off(self, **kwargs) -> None:
+        await self.hub.async_set_output(self.device, False)
 
 
 class BeWaveSwitch(SwitchEntity):

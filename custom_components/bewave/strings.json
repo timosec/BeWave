@@ -38,11 +38,12 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Configure MQTT in Home Assistant first. Enter the BE WAVE base topic (for example bewave for bewave/devices/16/tx). Devices appear when status messages arrive. The timeout marks stale measurements unavailable.",
+        "description": "Use the same MQTT broker as BE WAVE. Status base topic matches Publish topic in BE WAVE. Command base topic matches Subscribe topic in BE WAVE. Example: status bewave and command bewave/command. Devices appear when telemetry arrives.",
         "data": {
           "name": "Name",
-          "topic_prefix": "MQTT base topic",
-          "expire_after": "Status expiry (seconds)"
+          "topic_prefix": "Status base topic (BE WAVE Publish topic)",
+          "expire_after": "Status expiry (seconds)",
+          "command_prefix": "Command base topic (BE WAVE Subscribe topic)"
         }
       },
       "reconfigure": {
@@ -113,10 +114,11 @@
       },
       "mqtt": {
         "title": "BE WAVE MQTT",
-        "description": "Change the name and expiry. To edit the broker IP address, open [the MQTT integration](/config/integrations/integration/mqtt) and select Reconfigure. BE WAVE automatically uses the updated connection.",
+        "description": "Change the name, command base topic and expiry. Command base topic must match Subscribe topic in BE WAVE. To change broker IP, open [the MQTT integration](/config/integrations/integration/mqtt) and select Reconfigure.",
         "data": {
           "name": "Name",
-          "expire_after": "Status expiry (seconds)"
+          "expire_after": "Status expiry (seconds)",
+          "command_prefix": "Command base topic (BE WAVE Subscribe topic)"
         }
       },
       "connection": {

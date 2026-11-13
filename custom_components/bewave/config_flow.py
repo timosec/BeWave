@@ -11,6 +11,7 @@ from homeassistant.core import callback
 
 from .const import (
     CONF_COMMAND_ON,
+    CONF_COMMAND_PREFIX,
     CONF_DEVICES,
     CONF_EXPIRE_AFTER,
     CONF_LISTEN_PORT,
@@ -39,6 +40,13 @@ def _mqtt_schema(defaults=None, *, options=False) -> vol.Schema:
     defaults = defaults or {}
     fields = {
         vol.Required("name", default=defaults.get("name", "BE WAVE")): str,
+        vol.Required(
+            CONF_COMMAND_PREFIX,
+            default=defaults.get(
+                CONF_COMMAND_PREFIX,
+                f"{defaults.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)}/command",
+            ),
+        ): str,
         vol.Required(
             CONF_EXPIRE_AFTER,
             default=defaults.get(CONF_EXPIRE_AFTER, DEFAULT_EXPIRE_AFTER),
@@ -149,9 +157,15 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors[CONF_TOPIC_PREFIX] = "invalid_topic_prefix"
             else:
-                if not await mqtt.async_wait_for_mqtt_client(self.hass):
+                try:
+                    command_prefix = normalize_prefix(
+                        user_input.get(CONF_COMMAND_PREFIX, f"{prefix}/command")
+                    )
+                except ValueError:
+                    errors[CONF_COMMAND_PREFIX] = "invalid_topic_prefix"
+                if not errors and not await mqtt.async_wait_for_mqtt_client(self.hass):
                     errors["base"] = "mqtt_not_ready"
-                else:
+                if not errors:
                     await self.async_set_unique_id(f"mqtt:{prefix}")
                     self._abort_if_unique_id_configured()
                     name = user_input.get("name", "BE WAVE").strip() or "BE WAVE"
@@ -162,6 +176,7 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_TOPIC_PREFIX: prefix,
                             "name": name,
                             CONF_EXPIRE_AFTER: user_input[CONF_EXPIRE_AFTER],
+                            CONF_COMMAND_PREFIX: command_prefix,
                         },
                     )
 
@@ -340,11 +355,21 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
 
     async def async_step_mqtt(self, user_input: dict[str, Any] | None = None):
         """Change the display name or stale telemetry timeout."""
+        errors = {}
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            try:
+                user_input[CONF_COMMAND_PREFIX] = normalize_prefix(
+                    user_input[CONF_COMMAND_PREFIX]
+                )
+            except ValueError:
+                errors[CONF_COMMAND_PREFIX] = "invalid_topic_prefix"
+            else:
+                return self.async_create_entry(title="", data=user_input)
         defaults = {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
-            step_id="mqtt", data_schema=_mqtt_schema(defaults, options=True)
+            step_id="mqtt",
+            data_schema=_mqtt_schema(user_input or defaults, options=True),
+            errors=errors,
         )
 
     async def async_step_connection(self, user_input: dict[str, Any] | None = None):

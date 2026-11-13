@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0
+
+- Add native on/off switches for components reporting `on_off`.
+- Add an editable command topic prefix, matching BE WAVE Subscribe topic.
+- Publish non-retained QoS 0 commands to the current device index; use live feedback for the displayed state.
+- Reject control when broker/device telemetry is offline, stale, invalid or has a replaced route.
+- Prevent retained snapshots from being treated as live readings.
+- Include a real local MQTT broker round-trip test and regression tests.
+- Remove the transition guide and update installation/control instructions.
+
 ## 0.5.0
 
 - Add native MQTT telemetry using Home Assistant's existing MQTT connection.
@@ -13,4 +23,4 @@
 - Fix repository documentation and issue URLs.
 - Add protocol and Home Assistant integration tests.
 
-MQTT commands and automatic migration from Node-RED MQTT entity IDs are not included.
+Alarm-group commands are not included in this release.

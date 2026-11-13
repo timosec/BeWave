@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 from collections.abc import Callable
 from datetime import timedelta
@@ -9,11 +11,12 @@ from time import monotonic
 
 from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
-from .mqtt_models import MqttDevice, decode_message, device_identity
+from .mqtt_models import MqttDevice, binary_value, decode_message, device_identity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,12 +31,14 @@ class BeWaveMqttHub:
         prefix: str,
         name: str,
         expire_after: int,
+        command_prefix: str,
     ) -> None:
         self.hass = hass
         self.entry_id = entry_id
         self.prefix = prefix
         self.name = name
         self.expire_after = expire_after
+        self.command_prefix = command_prefix
         self.devices: dict[str, MqttDevice] = {}
         self.connected = False
         self.hub_device_id: str | None = None
@@ -138,7 +143,9 @@ class BeWaveMqttHub:
             self._routes.pop(device.topic, None)
         device.topic = message.topic
         self._routes[message.topic] = identity
-        device.update(payload, monotonic())
+        device.update(
+            payload, None if getattr(message, "retain", False) else monotonic()
+        )
         if device.snapshot() != before:
             self._store.async_delay_save(self._snapshot, 10)
         self._notify()
@@ -150,6 +157,36 @@ class BeWaveMqttHub:
             and updated is not None
             and monotonic() - updated <= self.expire_after
         )
+
+    async def async_set_output(self, device: MqttDevice, enabled: bool) -> None:
+        """Send a non-retained command to the current device index, never a serial."""
+        if (
+            not self.field_available(device, "on_off")
+            or binary_value(device.values.get("on_off")) is None
+            or not mqtt.is_connected(self.hass)
+            or self._routes.get(device.topic) != device.identity
+        ):
+            raise HomeAssistantError(
+                "BE WAVE: geen actuele verbinding/status voor dit apparaat"
+            )
+
+        index, _ = decode_message(device.topic, {}, self.prefix)
+        topic = f"{self.command_prefix}/devices/{index}/rx"
+        try:
+            async with asyncio.timeout(5):
+                await mqtt.async_publish(
+                    self.hass,
+                    topic,
+                    json.dumps({"on_off": int(enabled)}),
+                    qos=0,
+                    retain=False,
+                )
+        except TimeoutError as err:
+            raise HomeAssistantError(
+                "BE WAVE: MQTT-opdracht verzenden duurde te lang"
+            ) from err
+        # The received status remains authoritative. A successful publish is not
+        # proof that the physical device executed the command.
 
     @callback
     def _snapshot(self) -> dict:

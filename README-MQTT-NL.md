@@ -1,8 +1,7 @@
-# BE WAVE via MQTT — versie 0.5.0
+# BE WAVE via MQTT — versie 0.6.0
 
 Deze Home Assistant-integratie ontvangt de bestaande BE WAVE MQTT-statusberichten
-en maakt automatisch apparaten en entiteiten aan. Geen Node-RED en geen virtuele
-IP-apparaten nodig voor de metingen en statussen van fysieke apparaten.
+en maakt automatisch apparaten en entiteiten aan. Er zijn geen virtuele IP-apparaten nodig voor de ondersteunde metingen, statussen en aan/uit-bediening van fysieke apparaten.
 
 Het is een **custom integration voor Home Assistant**, te installeren via HACS
 of de map `custom_components`. Het is geen apart Supervisor-add-onproces.
@@ -26,7 +25,7 @@ of de map `custom_components`. Het is geen apart Supervisor-add-onproces.
 | `magnetic` | Raamcontact |
 | `vibration` | Trilling |
 | `violation` | Detectie |
-| `on_off` | Status |
+| `on_off` | Aan/uit-schakelaar en status |
 | `alarm_armed` | Ingeschakeld |
 | `alarm_detected`, `warning_alarm` | Alarm en waarschuwing |
 | `block_unblock` | Geblokkeerd |
@@ -51,7 +50,8 @@ en een BE WAVE-versie met MQTT-ondersteuning.
    | Instelling | Waarde |
    | --- | --- |
    | Naam | BE WAVE |
-   | MQTT-basistopic | `bewave` bij berichten zoals `bewave/devices/16/tx` |
+   | Status-basistopic | `bewave` bij berichten zoals `bewave/devices/16/tx` |
+   | Commando-basistopic | `bewave/command`, gelijk aan Subscribe topic in de BE WAVE-app |
    | Vervaltijd status | `180` seconden bij een pollinterval van `30` seconden |
 
 7. Wacht op nieuwe statusberichten. Apparaten verschijnen onder de BE WAVE-integratie.
@@ -71,8 +71,7 @@ bericht moet een JSON-object zijn met `sn`, optioneel `channel`, en statusvelden
 De eerste status van een apparaat moet een serienummer bevatten. Latere gedeeltelijke
 updates op hetzelfde topic mogen het serienummer weglaten.
 
-Gebruik voor meerdere hubs verschillende basistopics. De subscribe-instelling
-voor BE WAVE-besturingscommando's wordt door deze alleen-lezen versie niet gebruikt.
+Gebruik voor meerdere hubs verschillende basistopics. Het commando-basistopic moet exact overeenkomen met Subscribe topic in de BE WAVE-app.
 
 ## IP-adres wijzigen via Bewerken
 
@@ -101,7 +100,7 @@ De MQTT-versie heeft geen afzonderlijk BE WAVE-hub-IP-adres nodig.
 Ontdekte apparaatnamen, types en veldnamen worden opgeslagen, zodat de entiteiten
 na een herstart blijven bestaan. Meetwaarden en raam-/alarmstatussen worden niet
 als actuele waarden uit een bestand hersteld. Ze worden pas beschikbaar na
-nieuwe MQTT-berichten.
+nieuwe, live MQTT-berichten. Bewaarde brokerberichten worden uitsluitend gebruikt om apparaten en velden te herkennen; hun waarden gelden niet als actuele status.
 
 Wanneer de brokerverbinding wegvalt, worden entiteiten niet beschikbaar. Na
 herverbinden is per veld een nieuw statusbericht nodig. Ook worden waarden niet
@@ -111,23 +110,50 @@ de velden die daadwerkelijk in dat bericht staan.
 
 Pas de vervaltijd via **BE WAVE → Configureren** aan als het pollinterval langer is.
 
-## Wat deze versie nog niet doet
+## Componenten aan- en uitschakelen
 
-De MQTT-koppeling toont statussen en metingen. Ze verstuurt nog geen opdrachten
-voor relais, scènes of in-/uitschakelen van het alarm. Daarvoor moet eerst de
-officiële BE WAVE-structuur voor commandotopics, payloads en antwoorden worden
-vastgesteld. Er worden geen commando's afgeleid uit statusvelden.
+Componenten die een geldig `on_off`-veld melden, krijgen automatisch een
+**Schakelaar** onder hun eigen subapparaat. Bijvoorbeeld een relaiskanaal dat
+`on_off: 0` of `on_off: 1` verstuurt. Componenten zonder dit veld krijgen geen
+schakelknop.
 
-Virtuele apparaten die al bestaan en zelf MQTT-statussen publiceren kunnen nog
-steeds verschijnen. Ze hoeven niet nieuw te worden aangemaakt voor de ondersteunde
-metingen en statussen van fysieke apparaten.
+Stel voor de standaardconfiguratie in de BE WAVE-app in:
+
+| Instelling | Waarde |
+| --- | --- |
+| Publish topic | `bewave` |
+| Subscribe topic | `bewave/command` |
+
+Gebruik in de BE WAVE-integratie dezelfde waarden als status- en commando-basistopic.
+Behoud een afwijkende maar werkende configuratie en neem de bijbehorende waarden over.
+
+Bij aan/uit wordt bijvoorbeeld op `bewave/command/devices/23/rx` een JSON-bericht
+`{"on_off": 1}` of `{"on_off": 0}` verstuurd. Het getal 23 is de index uit het
+ontvangen statustopic, niet het serienummer of kanaalnummer. Als BE WAVE de
+apparaatindex verandert, gebruikt de schakelaar de nieuwe index.
+
+Opdrachten worden niet bewaard door de broker (retain uit) en gebruiken QoS 0.
+Er wordt alleen verzonden met een actieve MQTT-verbinding en een recente, geldige
+apparaatstatus. Een publicatiefout wordt als fout teruggegeven. De getoonde
+stand verandert pas nadat een statusbericht de wijziging bevestigt.
+
+### Afbakening bediening
+
+Deze versie ondersteunt aan/uit voor componenten met `on_off`. Dimmers worden
+hiermee alleen aan/uit geschakeld; helderheidsregeling, thermostaatinstellingen,
+scènes en het in-/uitschakelen van alarmgroepen zijn niet toegevoegd.
+
+## Protocolreferentie
+
+De commandostructuur is gecontroleerd aan de hand van de bestaande community-
+implementatie [homebridge-bewave-mqtt](https://github.com/rmarobert/homebridge-bewave-mqtt).
+Zie [PROTOCOL.md](PROTOCOL.md) voor de gebruikte referentie en afbakening.
 
 ## Ontwikkeling en controle
 
-De geautomatiseerde tests gebruiken Home Assistant 2026.10.4 met de MQTT-transportlaag
-gemockt. Ze controleren onder andere apparaat- en subapparaatregistratie, nieuwe
-velden, kanaalscheiding, topicwijzigingen, ongeldige gegevens, vervaltijd,
-verbindingsverlies, herladen en TCP-adreswijzigingen met behoud van entiteiten.
+De tests gebruiken Home Assistant 2026.10.4. Naast afzonderlijke tests met een gemockte transportlaag is er een test met een echte lokale MQTT-broker en echte Home Assistant MQTT-verbinding. Een gesimuleerd BE WAVE-apparaat publiceert status, ontvangt de schakelopdracht en stuurt de terugmelding. Er worden geen opdrachten naar een fysieke installatie verstuurd.
+
+Verder worden onder andere subapparaten, nieuwe velden, kanaalscheiding, topicwijzigingen, ongeldige gegevens, bewaarde brokerberichten, vervaltijd, verbindingsverlies, herladen en TCP-adreswijzigingen getest.
 
 Een praktijktest met de eigen BE WAVE-hub en MQTT-broker is nog nodig.
 

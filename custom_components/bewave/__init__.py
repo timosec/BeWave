@@ -7,6 +7,7 @@ from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CONF_COMMAND_PREFIX,
     CONF_DEVICES,
     CONF_EXPIRE_AFTER,
     CONF_TOPIC_PREFIX,
@@ -80,6 +81,12 @@ async def _async_setup_mqtt_entry(
         entry.options.get(
             CONF_EXPIRE_AFTER, entry.data.get(CONF_EXPIRE_AFTER, DEFAULT_EXPIRE_AFTER)
         ),
+        entry.options.get(
+            CONF_COMMAND_PREFIX,
+            entry.data.get(
+                CONF_COMMAND_PREFIX, f"{entry.data[CONF_TOPIC_PREFIX]}/command"
+            ),
+        ),
     )
     await hub.async_load()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = hub
@@ -91,8 +98,8 @@ async def _async_setup_mqtt_entry(
         name=hub.name,
     )
     hub.hub_device_id = parent.id
-    await hass.config_entries.async_forward_entry_setups(entry, MQTT_PLATFORMS)
     try:
+        await hass.config_entries.async_forward_entry_setups(entry, MQTT_PLATFORMS)
         await hub.async_start()
     except Exception:
         await hub.async_stop()

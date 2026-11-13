@@ -38,11 +38,12 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Configureer eerst MQTT in Home Assistant. Gebruik de basisnaam uit BE WAVE (bijvoorbeeld bewave bij bewave/devices/16/tx). Apparaten verschijnen zodra zij een statusbericht versturen. De vervaltijd bepaalt wanneer ontbrekende gegevens niet beschikbaar worden.",
+        "description": "Gebruik dezelfde MQTT-broker als BE WAVE. Status-basistopic = Publish topic in de BE WAVE-app. Commando-basistopic = Subscribe topic in de BE WAVE-app. Voorbeeld: status bewave en commando bewave/command. Apparaten verschijnen zodra zij een statusbericht versturen.",
         "data": {
           "name": "Naam",
-          "topic_prefix": "MQTT-basistopic",
-          "expire_after": "Vervaltijd status (seconden)"
+          "topic_prefix": "Status-basistopic (Publish topic BE WAVE)",
+          "expire_after": "Vervaltijd status (seconden)",
+          "command_prefix": "Commando-basistopic (Subscribe topic BE WAVE)"
         }
       },
       "reconfigure": {
@@ -113,10 +114,11 @@
       },
       "mqtt": {
         "title": "BE WAVE MQTT",
-        "description": "Naam en vervaltijd aanpassen. MQTT-server of IP-adres wijzigen? Open [de MQTT-integratie](/config/integrations/integration/mqtt) en kies Opnieuw configureren. BE WAVE gebruikt automatisch de gewijzigde verbinding.",
+        "description": "Pas naam, commando-basistopic en vervaltijd aan. Het commando-basistopic moet overeenkomen met Subscribe topic in de BE WAVE-app. Broker-IP wijzigen? Open [de MQTT-integratie](/config/integrations/integration/mqtt) en kies Opnieuw configureren.",
         "data": {
           "name": "Naam",
-          "expire_after": "Vervaltijd status (seconden)"
+          "expire_after": "Vervaltijd status (seconden)",
+          "command_prefix": "Commando-basistopic (Subscribe topic BE WAVE)"
         }
       },
       "connection": {

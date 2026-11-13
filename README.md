@@ -1,17 +1,17 @@
 # BE WAVE — MQTT and legacy TCP
 
-Version **0.5.0** adds automatic MQTT device discovery directly inside the BE WAVE integration. No Node-RED or virtual IP devices are needed to expose supported physical-device telemetry. Uses Home Assistant’s existing MQTT connection and groups devices as children of a BE WAVE hub. Requires Home Assistant 2026.10.0 or newer.
+Version **0.6.0** adds automatic MQTT device discovery directly inside the BE WAVE integration. No virtual IP devices are needed for supported physical-device telemetry and on/off control. Uses Home Assistant’s existing MQTT connection and groups devices as children of a BE WAVE hub. Requires Home Assistant 2026.10.0 or newer.
 
-**[Nederlandse installatiehandleiding, IP-adres wijzigen en overstappen vanaf Node-RED](README-MQTT-NL.md)**
+**[Nederlandse installatiehandleiding, schakelen en IP-adres wijzigen](README-MQTT-NL.md)**
 
 1. Copy `custom_components/bewave` to your Home Assistant configuration and restart.
 2. Configure Home Assistant’s MQTT integration.
 3. Add **BE WAVE → MQTT**. Enter base topic `bewave` for messages on `bewave/devices/16/tx`.
 4. Devices and supported fields appear when telemetry arrives.
 
-The MQTT mode is read-only: temperature, battery, contacts, detection and other reported statuses. MQTT command support is not included. Existing TCP installations are preserved. TCP hub addresses can be changed through **Configure → Hub IP-adres wijzigen** or **Reconfigure**, without changing entity IDs. Change the MQTT broker IP through the MQTT integration’s own Reconfigure action.
+MQTT supports temperature, battery, contacts, detection and other statuses, plus on/off control for components reporting `on_off`. Set the command base topic to match BE WAVE’s Subscribe topic, for example `bewave/command`. State changes follow actual status feedback. Alarm-group commands and dimmer brightness are not included. Existing TCP installations are preserved. TCP hub addresses can be changed through **Configure → Hub IP-adres wijzigen** or **Reconfigure**, without changing entity IDs. Change the MQTT broker IP through the MQTT integration’s own Reconfigure action.
 
-See [the changelog](CHANGELOG.md) and [test suite](tests/). Automated tests run with Home Assistant and a mocked MQTT transport; a live hardware test is still required.
+See [the changelog](CHANGELOG.md) and [test suite](tests/). Automated tests run with Home Assistant, including a round-trip test through a real local MQTT broker and simulated BE WAVE device. A live hardware test is still required.
 
 ## Legacy TCP configuration
 
