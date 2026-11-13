@@ -1,4 +1,5 @@
 """TCP runtime for BeWave."""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,29 +21,44 @@ _LOGGER = logging.getLogger(__name__)
 class BeWaveHub:
     """Runtime coordinator for BeWave."""
 
-    def __init__(self, hass: HomeAssistant, host: str, devices: list[BeWaveDevice]) -> None:
+    def __init__(
+        self, hass: HomeAssistant, host: str, devices: list[BeWaveDevice]
+    ) -> None:
         self.hass = hass
         self.host = host
+        self.identity_host = host
         self.devices = devices
         self._servers: dict[int, asyncio.base_events.Server] = {}
         self._listeners: dict[str, list[Callable[[bool], None]]] = defaultdict(list)
         self._device_by_message_port: dict[tuple[int, str], BeWaveDevice] = {}
-        self._device_by_id: dict[str, BeWaveDevice] = {device.id: device for device in devices}
-        self._state_by_device_id: dict[str, bool | None] = {device.id: None for device in devices}
+        self._device_by_id: dict[str, BeWaveDevice] = {
+            device.id: device for device in devices
+        }
+        self._state_by_device_id: dict[str, bool | None] = {
+            device.id: None for device in devices
+        }
 
         for device in devices:
             if device.has_feedback:
                 assert device.on_message is not None
                 assert device.off_message is not None
-                self._device_by_message_port[(device.listen_port, device.on_message)] = device
-                self._device_by_message_port[(device.listen_port, device.off_message)] = device
+                self._device_by_message_port[
+                    (device.listen_port, device.on_message)
+                ] = device
+                self._device_by_message_port[
+                    (device.listen_port, device.off_message)
+                ] = device
 
     async def async_start(self) -> None:
         """Start TCP listeners for feedback devices."""
-        for port in {device.listen_port for device in self.devices if device.has_feedback}:
+        for port in {
+            device.listen_port for device in self.devices if device.has_feedback
+        }:
             if port in self._servers:
                 continue
-            server = await asyncio.start_server(self._handle_client, host="0.0.0.0", port=port)
+            server = await asyncio.start_server(
+                self._handle_client, host="0.0.0.0", port=port
+            )
             self._servers[port] = server
             _LOGGER.info("BeWave luistert op TCP poort %s voor feedback", port)
 
@@ -53,7 +69,9 @@ class BeWaveHub:
             await server.wait_closed()
         self._servers.clear()
 
-    def subscribe(self, device_id: str, callback: Callable[[bool], None]) -> Callable[[], None]:
+    def subscribe(
+        self, device_id: str, callback: Callable[[bool], None]
+    ) -> Callable[[], None]:
         """Subscribe to state changes for a specific device."""
         self._listeners[device_id].append(callback)
 
@@ -73,15 +91,21 @@ class BeWaveHub:
         - CRLF line ending
         - keep the socket open briefly after the write
         """
-        payload = f"{command}\r\n".encode("utf-8")
+        payload = f"{command}\r\n".encode()
         _LOGGER.info("BeWave connecteer naar %s:%s", self.host, DEFAULT_TARGET_PORT)
-        _LOGGER.info("BeWave verzendt naar %s:%s -> %s", self.host, DEFAULT_TARGET_PORT, command)
+        _LOGGER.info(
+            "BeWave verzendt naar %s:%s -> %s", self.host, DEFAULT_TARGET_PORT, command
+        )
         try:
             await asyncio.to_thread(self._send_blocking, payload)
         except Exception:
-            _LOGGER.exception("BeWave verzenden mislukt naar %s:%s", self.host, DEFAULT_TARGET_PORT)
+            _LOGGER.exception(
+                "BeWave verzenden mislukt naar %s:%s", self.host, DEFAULT_TARGET_PORT
+            )
             raise
-        _LOGGER.info("BeWave verzenden voltooid naar %s:%s", self.host, DEFAULT_TARGET_PORT)
+        _LOGGER.info(
+            "BeWave verzenden voltooid naar %s:%s", self.host, DEFAULT_TARGET_PORT
+        )
 
     def _send_blocking(self, payload: bytes) -> None:
         """Blocking send implementation that mirrors the Homebridge plugin."""
@@ -120,12 +144,16 @@ class BeWaveHub:
         """Dispatch feedback message to subscribers."""
         device = self._device_by_message_port.get((port, message))
         if device is None:
-            _LOGGER.warning("Geen BeWave device match voor bericht %s op poort %s", message, port)
+            _LOGGER.warning(
+                "Geen BeWave device match voor bericht %s op poort %s", message, port
+            )
             return
 
         new_state = message == device.on_message
         self._state_by_device_id[device.id] = new_state
-        _LOGGER.info("BeWave statusupdate %s -> %s", device.name, "AAN" if new_state else "UIT")
+        _LOGGER.info(
+            "BeWave statusupdate %s -> %s", device.name, "AAN" if new_state else "UIT"
+        )
         for callback in list(self._listeners[device.id]):
             callback(new_state)
 

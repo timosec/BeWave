@@ -1,4 +1,5 @@
 """Binary sensor platform for BeWave."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -8,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_TRANSPORT, DOMAIN, TRANSPORT_MQTT
 from .entity import BeWaveBaseEntity
 from .tcp import BeWaveHub
 
@@ -21,6 +22,15 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up BeWave zone status entities."""
+    if entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
+        from .mqtt_binary_sensor import BeWaveMqttBinarySensor
+        from .mqtt_entity import async_setup_mqtt_platform
+
+        async_setup_mqtt_platform(
+            hass, entry, async_add_entities, "binary_sensor", BeWaveMqttBinarySensor
+        )
+        return
+
     hub: BeWaveHub = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         BeWaveZoneStatusBinarySensor(hub, hub.get_device(device.id))
@@ -36,7 +46,9 @@ class BeWaveZoneStatusBinarySensor(BeWaveBaseEntity, BinarySensorEntity):
 
     def __init__(self, hub: BeWaveHub, device) -> None:
         super().__init__(hub, device)
-        self._attr_unique_id = f"bewave_{hub.host}_{self._device.unique_id}_status"
+        self._attr_unique_id = (
+            f"bewave_{hub.identity_host}_{self._device.unique_id}_status"
+        )
         self._attr_is_on = hub.get_state(device.id)
         self._unsubscribe: Callable[[], None] | None = None
 

@@ -1,4 +1,23 @@
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=timosec&repository=bewave&category=Integration)
+# BE WAVE — MQTT and legacy TCP
+
+Version **0.5.0** adds automatic MQTT device discovery directly inside the BE WAVE integration. No Node-RED or virtual IP devices are needed to expose supported physical-device telemetry. Uses Home Assistant’s existing MQTT connection and groups devices as children of a BE WAVE hub. Requires Home Assistant 2026.10.0 or newer.
+
+**[Nederlandse installatiehandleiding, IP-adres wijzigen en overstappen vanaf Node-RED](README-MQTT-NL.md)**
+
+1. Copy `custom_components/bewave` to your Home Assistant configuration and restart.
+2. Configure Home Assistant’s MQTT integration.
+3. Add **BE WAVE → MQTT**. Enter base topic `bewave` for messages on `bewave/devices/16/tx`.
+4. Devices and supported fields appear when telemetry arrives.
+
+The MQTT mode is read-only: temperature, battery, contacts, detection and other reported statuses. MQTT command support is not included. Existing TCP installations are preserved. TCP hub addresses can be changed through **Configure → Hub IP-adres wijzigen** or **Reconfigure**, without changing entity IDs. Change the MQTT broker IP through the MQTT integration’s own Reconfigure action.
+
+See [the changelog](CHANGELOG.md) and [test suite](tests/). Automated tests run with Home Assistant and a mocked MQTT transport; a live hardware test is still required.
+
+## Legacy TCP configuration
+
+The instructions below apply to the existing TCP mode, selected via **BE WAVE → TCP**.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=timosec&repository=Satel-BeWave-Virtual-IP-Device&category=Integration)
 
 # BeWave custom integration
 

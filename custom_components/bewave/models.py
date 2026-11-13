@@ -1,4 +1,5 @@
 """Models for the BeWave integration."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -52,9 +53,16 @@ def normalize_device(raw: dict[str, Any], index: int) -> BeWaveDevice:
     command_on = _pick(raw, CONF_COMMAND_ON, "commandOn")
     on_message = _pick(raw, CONF_ON_MESSAGE, "onMessage")
     off_message = _pick(raw, CONF_OFF_MESSAGE, "offMessage")
-    listen_port = int(_pick(raw, CONF_LISTEN_PORT, "listenPort", default=DEFAULT_LISTEN_PORT))
+    listen_port = int(
+        _pick(raw, CONF_LISTEN_PORT, "listenPort", default=DEFAULT_LISTEN_PORT)
+    )
     momentary_reset_ms = int(
-        _pick(raw, CONF_MOMENTARY_RESET_MS, "momentaryResetMs", default=DEFAULT_MOMENTARY_RESET_MS)
+        _pick(
+            raw,
+            CONF_MOMENTARY_RESET_MS,
+            "momentaryResetMs",
+            default=DEFAULT_MOMENTARY_RESET_MS,
+        )
     )
     raw_id = _pick(raw, "id", default=f"device_{index}")
 

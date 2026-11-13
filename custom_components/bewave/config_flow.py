@@ -1,10 +1,10 @@
 """Config flow for BeWave."""
+
 from __future__ import annotations
 
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
 from homeassistant.core import callback
@@ -12,21 +12,51 @@ from homeassistant.core import callback
 from .const import (
     CONF_COMMAND_ON,
     CONF_DEVICES,
+    CONF_EXPIRE_AFTER,
     CONF_LISTEN_PORT,
     CONF_OFF_MESSAGE,
     CONF_ON_MESSAGE,
+    CONF_TOPIC_PREFIX,
+    CONF_TRANSPORT,
+    DEFAULT_EXPIRE_AFTER,
     DEFAULT_LISTEN_PORT,
+    DEFAULT_TOPIC_PREFIX,
     DOMAIN,
+    TRANSPORT_MQTT,
 )
 from .models import devices_to_storage_dicts, normalize_device
+from .mqtt_models import normalize_prefix
 
 ACTION_ADD = "add"
 ACTION_EDIT = "edit"
 ACTION_DELETE = "delete"
 ACTION_FINISH = "finish"
+ACTION_CONNECTION = "connection"
 
 
-def _menu_choices(*, allow_finish: bool, allow_edit: bool, allow_delete: bool) -> dict[str, str]:
+def _mqtt_schema(defaults=None, *, options=False) -> vol.Schema:
+    """Keep MQTT connection credentials in Home Assistant, not here."""
+    defaults = defaults or {}
+    fields = {
+        vol.Required("name", default=defaults.get("name", "BE WAVE")): str,
+        vol.Required(
+            CONF_EXPIRE_AFTER,
+            default=defaults.get(CONF_EXPIRE_AFTER, DEFAULT_EXPIRE_AFTER),
+        ): vol.All(vol.Coerce(int), vol.Range(min=60, max=86400)),
+    }
+    if not options:
+        fields[
+            vol.Required(
+                CONF_TOPIC_PREFIX,
+                default=defaults.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX),
+            )
+        ] = str
+    return vol.Schema(fields)
+
+
+def _menu_choices(
+    *, allow_finish: bool, allow_edit: bool, allow_delete: bool
+) -> dict[str, str]:
     choices: dict[str, str] = {
         ACTION_ADD: "Zone toevoegen",
     }
@@ -39,7 +69,9 @@ def _menu_choices(*, allow_finish: bool, allow_edit: bool, allow_delete: bool) -
     return choices
 
 
-def _menu_schema(*, allow_finish: bool, allow_edit: bool, allow_delete: bool) -> vol.Schema:
+def _menu_schema(
+    *, allow_finish: bool, allow_edit: bool, allow_delete: bool
+) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required("action", default=ACTION_ADD): vol.In(
@@ -54,7 +86,9 @@ def _menu_schema(*, allow_finish: bool, allow_edit: bool, allow_delete: bool) ->
 
 
 def _select_device_schema(devices: list[dict[str, Any]]) -> vol.Schema:
-    options = {str(device["id"]): f"{device['name']} ({device['id']})" for device in devices}
+    options = {
+        str(device["id"]): f"{device['name']} ({device['id']})" for device in devices
+    }
     return vol.Schema({vol.Required("device_id"): vol.In(options)})
 
 
@@ -101,6 +135,43 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._edit_device_id: str | None = None
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
+        """Choose automatic MQTT discovery or legacy virtual TCP zones."""
+        return self.async_show_menu(step_id="user", menu_options=["mqtt", "tcp"])
+
+    async def async_step_mqtt(self, user_input: dict[str, Any] | None = None):
+        """Configure telemetry; credentials belong to the MQTT integration."""
+        from homeassistant.components import mqtt
+
+        errors = {}
+        if user_input is not None:
+            try:
+                prefix = normalize_prefix(user_input[CONF_TOPIC_PREFIX])
+            except ValueError:
+                errors[CONF_TOPIC_PREFIX] = "invalid_topic_prefix"
+            else:
+                if not await mqtt.async_wait_for_mqtt_client(self.hass):
+                    errors["base"] = "mqtt_not_ready"
+                else:
+                    await self.async_set_unique_id(f"mqtt:{prefix}")
+                    self._abort_if_unique_id_configured()
+                    name = user_input.get("name", "BE WAVE").strip() or "BE WAVE"
+                    return self.async_create_entry(
+                        title=name,
+                        data={
+                            CONF_TRANSPORT: TRANSPORT_MQTT,
+                            CONF_TOPIC_PREFIX: prefix,
+                            "name": name,
+                            CONF_EXPIRE_AFTER: user_input[CONF_EXPIRE_AFTER],
+                        },
+                    )
+
+        return self.async_show_form(
+            step_id="mqtt",
+            errors=errors,
+            data_schema=_mqtt_schema(user_input),
+        )
+
+    async def async_step_tcp(self, user_input: dict[str, Any] | None = None):
         """Handle the initial step."""
         errors: dict[str, str] = {}
 
@@ -114,9 +185,43 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_device_menu()
 
         return self.async_show_form(
-            step_id="user",
+            step_id="tcp",
             data_schema=vol.Schema({vol.Required(CONF_HOST, default=self._host): str}),
             errors=errors,
+        )
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        """Edit connection settings from the integration's reconfigure action."""
+        entry = self._get_reconfigure_entry()
+        if entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
+            return self.async_abort(reason="mqtt_broker_managed")
+        errors = {}
+        host = entry.data[CONF_HOST]
+        if user_input is not None:
+            host = user_input[CONF_HOST].strip()
+            if not host:
+                errors[CONF_HOST] = "invalid_host"
+            elif any(
+                other.entry_id != entry.entry_id and other.data.get(CONF_HOST) == host
+                for other in self._async_current_entries()
+            ):
+                errors[CONF_HOST] = "host_already_configured"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=host,
+                    title=f"BeWave ({host})",
+                    data_updates={
+                        CONF_HOST: host,
+                        "entity_host": entry.data.get(
+                            "entity_host", entry.data[CONF_HOST]
+                        ),
+                    },
+                )
+        return self.async_show_form(
+            step_id="reconfigure",
+            errors=errors,
+            data_schema=vol.Schema({vol.Required(CONF_HOST, default=host): str}),
         )
 
     async def async_step_device_menu(self, user_input: dict[str, Any] | None = None):
@@ -189,6 +294,9 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Manage BeWave zones."""
+        if self.config_entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
+            return await self.async_step_mqtt(user_input)
+
         if not self._devices:
             self._devices = list(
                 self.config_entry.options.get(
@@ -205,16 +313,74 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             if action == ACTION_DELETE:
                 return await self.async_step_select_delete_device()
             if action == ACTION_FINISH:
-                return self.async_create_entry(title="", data={CONF_DEVICES: self._devices})
+                return self.async_create_entry(
+                    title="", data={CONF_DEVICES: self._devices}
+                )
+            if action == ACTION_CONNECTION:
+                return await self.async_step_connection()
 
         return self.async_show_form(
             step_id="init",
-            data_schema=_menu_schema(
-                allow_finish=True,
-                allow_edit=bool(self._devices),
-                allow_delete=bool(self._devices),
+            data_schema=vol.Schema(
+                {
+                    vol.Required("action", default=ACTION_ADD): vol.In(
+                        {
+                            **_menu_choices(
+                                allow_finish=True,
+                                allow_edit=bool(self._devices),
+                                allow_delete=bool(self._devices),
+                            ),
+                            ACTION_CONNECTION: "Hub IP-adres wijzigen",
+                        }
+                    )
+                }
             ),
             description_placeholders={"zone_count": str(len(self._devices))},
+        )
+
+    async def async_step_mqtt(self, user_input: dict[str, Any] | None = None):
+        """Change the display name or stale telemetry timeout."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+        defaults = {**self.config_entry.data, **self.config_entry.options}
+        return self.async_show_form(
+            step_id="mqtt", data_schema=_mqtt_schema(defaults, options=True)
+        )
+
+    async def async_step_connection(self, user_input: dict[str, Any] | None = None):
+        """Edit a legacy hub address without renaming existing entities."""
+        entry = self.config_entry
+        host = entry.data[CONF_HOST]
+        errors = {}
+        if user_input is not None:
+            host = user_input[CONF_HOST].strip()
+            if not host:
+                errors[CONF_HOST] = "invalid_host"
+            elif any(
+                other.entry_id != entry.entry_id and other.data.get(CONF_HOST) == host
+                for other in self.hass.config_entries.async_entries(DOMAIN)
+            ):
+                errors[CONF_HOST] = "host_already_configured"
+            else:
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    unique_id=host,
+                    title=f"BeWave ({host})",
+                    data={
+                        **entry.data,
+                        CONF_HOST: host,
+                        "entity_host": entry.data.get(
+                            "entity_host", entry.data[CONF_HOST]
+                        ),
+                    },
+                )
+                return self.async_create_entry(
+                    title="", data={**entry.options, CONF_DEVICES: self._devices}
+                )
+        return self.async_show_form(
+            step_id="connection",
+            errors=errors,
+            data_schema=vol.Schema({vol.Required(CONF_HOST, default=host): str}),
         )
 
     async def async_step_add_device(self, user_input: dict[str, Any] | None = None):
@@ -243,7 +409,9 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             errors=errors,
         )
 
-    async def async_step_select_edit_device(self, user_input: dict[str, Any] | None = None):
+    async def async_step_select_edit_device(
+        self, user_input: dict[str, Any] | None = None
+    ):
         """Choose a zone to edit."""
         if user_input is not None:
             self._edit_device_id = user_input["device_id"]
@@ -257,7 +425,10 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_edit_device(self, user_input: dict[str, Any] | None = None):
         """Edit a selected zone."""
         errors: dict[str, str] = {}
-        selected = next((item for item in self._devices if str(item["id"]) == self._edit_device_id), None)
+        selected = next(
+            (item for item in self._devices if str(item["id"]) == self._edit_device_id),
+            None,
+        )
         if selected is None:
             return await self.async_step_init()
 
@@ -284,11 +455,15 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             errors=errors,
         )
 
-    async def async_step_select_delete_device(self, user_input: dict[str, Any] | None = None):
+    async def async_step_select_delete_device(
+        self, user_input: dict[str, Any] | None = None
+    ):
         """Choose a zone to delete."""
         if user_input is not None:
             device_id = user_input["device_id"]
-            self._devices = [item for item in self._devices if str(item["id"]) != device_id]
+            self._devices = [
+                item for item in self._devices if str(item["id"]) != device_id
+            ]
             return await self.async_step_init()
 
         return self.async_show_form(

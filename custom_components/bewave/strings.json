@@ -1,0 +1,136 @@
+{
+  "title": "BeWave",
+  "config": {
+    "step": {
+      "user": {
+        "title": "BE WAVE",
+        "description": "Choose the connection method.",
+        "menu_options": {
+          "mqtt": "MQTT — discover devices automatically",
+          "tcp": "TCP — legacy virtual devices"
+        }
+      },
+      "device_menu": {
+        "title": "Add zones",
+        "description": "Configured zones: {zone_count}. Each zone creates a stateless trigger button and, when feedback fields are filled in, a separate status entity.",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_device": {
+        "title": "Add zone",
+        "description": "Create one BeWave zone. The trigger command becomes a button entity. The feedback messages create a separate read-only status entity.",
+        "data": {
+          "id": "Zone ID",
+          "name": "Zone name",
+          "command_on": "HTTP command to BeWave",
+          "on_message": "HTTP output on request",
+          "off_message": "HTTP output off request",
+          "listen_port": "Listen port"
+        }
+      },
+      "tcp": {
+        "title": "Connect BeWave hub",
+        "description": "Configure the IP address or hostname of the BeWave hub.",
+        "data": {
+          "host": "Host or IP address"
+        }
+      },
+      "mqtt": {
+        "title": "BE WAVE via MQTT",
+        "description": "Configure MQTT in Home Assistant first. Enter the BE WAVE base topic (for example bewave for bewave/devices/16/tx). Devices appear when status messages arrive. The timeout marks stale measurements unavailable.",
+        "data": {
+          "name": "Name",
+          "topic_prefix": "MQTT base topic",
+          "expire_after": "Status expiry (seconds)"
+        }
+      },
+      "reconfigure": {
+        "title": "Change hub IP address",
+        "description": "Existing devices and entity identities are preserved.",
+        "data": {
+          "host": "Hub IP address or hostname"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Enter an IP address or hostname.",
+      "at_least_one_device": "Add at least one zone before finishing setup.",
+      "invalid_device": "Check the zone fields. Name and command are required, and feedback must contain both ON and OFF messages if used.",
+      "invalid_topic_prefix": "Enter a base topic without + or #.",
+      "mqtt_not_ready": "Configure the Home Assistant MQTT integration first, then try again.",
+      "host_already_configured": "This hub address is already configured by another BE WAVE entry."
+    },
+    "abort": {
+      "already_configured": "This BeWave hub is already configured.",
+      "mqtt_broker_managed": "Home Assistant manages the broker IP address. Go to Settings → Devices & services → MQTT → Reconfigure to change it. BE WAVE automatically uses the updated MQTT connection."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage zones",
+        "description": "Configured zones: {zone_count}. Add, edit, or remove zones.",
+        "data": {
+          "action": "Action"
+        }
+      },
+      "add_device": {
+        "title": "Add zone",
+        "description": "Create one BeWave zone. The trigger command becomes a button entity. The feedback messages create a separate read-only status entity.",
+        "data": {
+          "id": "Zone ID",
+          "name": "Zone name",
+          "command_on": "HTTP command to BeWave",
+          "on_message": "HTTP output on request",
+          "off_message": "HTTP output off request",
+          "listen_port": "Listen port"
+        }
+      },
+      "select_edit_device": {
+        "title": "Select zone to edit",
+        "data": {
+          "device_id": "Zone"
+        }
+      },
+      "edit_device": {
+        "title": "Edit zone",
+        "description": "Edit the zone details. The trigger command is sent when the button is pressed. Feedback messages update the separate status entity.",
+        "data": {
+          "id": "Zone ID",
+          "name": "Zone name",
+          "command_on": "HTTP command to BeWave",
+          "on_message": "HTTP output on request",
+          "off_message": "HTTP output off request",
+          "listen_port": "Listen port"
+        }
+      },
+      "select_delete_device": {
+        "title": "Select zone to remove",
+        "data": {
+          "device_id": "Zone"
+        }
+      },
+      "mqtt": {
+        "title": "BE WAVE MQTT",
+        "description": "Change the name and expiry. To edit the broker IP address, open [the MQTT integration](/config/integrations/integration/mqtt) and select Reconfigure. BE WAVE automatically uses the updated connection.",
+        "data": {
+          "name": "Name",
+          "expire_after": "Status expiry (seconds)"
+        }
+      },
+      "connection": {
+        "title": "Change hub IP address",
+        "description": "Existing devices and entity identities are preserved.",
+        "data": {
+          "host": "Hub IP address or hostname"
+        }
+      }
+    },
+    "error": {
+      "invalid_device": "Check the zone fields. Name and command are required, and feedback must contain both ON and OFF messages if used.",
+      "host_already_configured": "This hub address is already configured by another BE WAVE entry.",
+      "invalid_host": "Enter an IP address or hostname."
+    }
+  }
+}

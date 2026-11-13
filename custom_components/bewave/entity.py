@@ -1,4 +1,5 @@
 """Shared entity helpers for BeWave."""
+
 from __future__ import annotations
 
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -19,7 +20,7 @@ class BeWaveBaseEntity(Entity):
         self._hub = hub
         self._device = device
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{hub.host}_{device.unique_id}")},
+            identifiers={(DOMAIN, f"{hub.identity_host}_{device.unique_id}")},
             manufacturer="BeWave",
             model="Zone",
             name=device.name,

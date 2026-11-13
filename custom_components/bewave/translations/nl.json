@@ -3,10 +3,11 @@
   "config": {
     "step": {
       "user": {
-        "title": "BeWave hub",
-        "description": "Voer het IP-adres of de hostnaam van je BeWave hub in.",
-        "data": {
-          "host": "BeWave host"
+        "title": "BE WAVE",
+        "description": "Kies de verbindingsmethode.",
+        "menu_options": {
+          "mqtt": "MQTT — automatisch apparaten toevoegen",
+          "tcp": "TCP — bestaande virtuele apparaten"
         }
       },
       "device_menu": {
@@ -27,15 +28,42 @@
           "off_message": "HTTP-Uitgang-uit-verzoek",
           "listen_port": "Luisterpoort"
         }
+      },
+      "tcp": {
+        "title": "BeWave hub",
+        "description": "Voer het IP-adres of de hostnaam van je BeWave hub in.",
+        "data": {
+          "host": "BeWave host"
+        }
+      },
+      "mqtt": {
+        "title": "BE WAVE via MQTT",
+        "description": "Configureer eerst MQTT in Home Assistant. Gebruik de basisnaam uit BE WAVE (bijvoorbeeld bewave bij bewave/devices/16/tx). Apparaten verschijnen zodra zij een statusbericht versturen. De vervaltijd bepaalt wanneer ontbrekende gegevens niet beschikbaar worden.",
+        "data": {
+          "name": "Naam",
+          "topic_prefix": "MQTT-basistopic",
+          "expire_after": "Vervaltijd status (seconden)"
+        }
+      },
+      "reconfigure": {
+        "title": "Hub IP-adres wijzigen",
+        "description": "De bestaande apparaten en entiteiten blijven behouden.",
+        "data": {
+          "host": "Hub IP-adres of hostnaam"
+        }
       }
     },
     "error": {
-      "invalid_host": "Vul een geldige host of IP-adres in.",
+      "invalid_host": "Vul een IP-adres of hostnaam in.",
       "at_least_one_device": "Voeg minimaal een zone toe voordat je afrondt.",
-      "invalid_device": "Controleer de zonevelden. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt."
+      "invalid_device": "Controleer de zonevelden. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt.",
+      "invalid_topic_prefix": "Vul een basistopic in zonder + of #.",
+      "mqtt_not_ready": "Configureer eerst de MQTT-integratie in Home Assistant en probeer opnieuw.",
+      "host_already_configured": "Dit hub-adres is al in gebruik bij een andere BE WAVE-koppeling."
     },
     "abort": {
-      "already_configured": "Deze BeWave hub is al geconfigureerd."
+      "already_configured": "Deze BeWave hub is al geconfigureerd.",
+      "mqtt_broker_managed": "Het broker-IP-adres wordt beheerd door Home Assistant. Ga naar Instellingen → Apparaten & diensten → MQTT → Opnieuw configureren om het adres te wijzigen. De BE WAVE-integratie gebruikt daarna automatisch dezelfde verbinding."
     }
   },
   "options": {
@@ -82,10 +110,27 @@
         "data": {
           "device_id": "Zone"
         }
+      },
+      "mqtt": {
+        "title": "BE WAVE MQTT",
+        "description": "Naam en vervaltijd aanpassen. MQTT-server of IP-adres wijzigen? Open [de MQTT-integratie](/config/integrations/integration/mqtt) en kies Opnieuw configureren. BE WAVE gebruikt automatisch de gewijzigde verbinding.",
+        "data": {
+          "name": "Naam",
+          "expire_after": "Vervaltijd status (seconden)"
+        }
+      },
+      "connection": {
+        "title": "Hub IP-adres wijzigen",
+        "description": "De bestaande apparaten en entiteiten blijven behouden.",
+        "data": {
+          "host": "Hub IP-adres of hostnaam"
+        }
       }
     },
     "error": {
-      "invalid_device": "Controleer de zonevelden. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt."
+      "invalid_device": "Controleer de zonevelden. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt.",
+      "host_already_configured": "Dit hub-adres is al in gebruik bij een andere BE WAVE-koppeling.",
+      "invalid_host": "Vul een IP-adres of hostnaam in."
     }
   }
 }

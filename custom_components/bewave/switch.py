@@ -1,4 +1,5 @@
 """Switch platform for BeWave."""
+
 from __future__ import annotations
 
 import logging
@@ -72,7 +73,9 @@ class BeWaveSwitch(SwitchEntity):
 
         self._attr_is_on = True
         self.async_write_ha_state()
-        async_call_later(self.hass, self._device.momentary_reset_ms / 1000, self._reset_state)
+        async_call_later(
+            self.hass, self._device.momentary_reset_ms / 1000, self._reset_state
+        )
 
     async def async_turn_off(self, **kwargs) -> None:
         """Mirror Homebridge behavior: trigger the same command on OFF."""

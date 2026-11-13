@@ -1,4 +1,5 @@
 """Button platform for BeWave."""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +25,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up BeWave button entities."""
     hub: BeWaveHub = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(BeWaveTriggerButton(hub, hub.get_device(device.id)) for device in hub.devices)
+    async_add_entities(
+        BeWaveTriggerButton(hub, hub.get_device(device.id)) for device in hub.devices
+    )
 
 
 class BeWaveTriggerButton(BeWaveBaseEntity, ButtonEntity):
@@ -35,7 +38,9 @@ class BeWaveTriggerButton(BeWaveBaseEntity, ButtonEntity):
 
     def __init__(self, hub: BeWaveHub, device) -> None:
         super().__init__(hub, device)
-        self._attr_unique_id = f"bewave_{hub.host}_{self._device.unique_id}_trigger"
+        self._attr_unique_id = (
+            f"bewave_{hub.identity_host}_{self._device.unique_id}_trigger"
+        )
 
     async def async_press(self) -> None:
         """Send the configured trigger command to BeWave."""
