@@ -106,9 +106,11 @@ async def _async_setup_mqtt_entry(
 
 
 def _async_remove_mqtt_read_only_entities(hass, entry, hub) -> None:
-    """Remove telemetry created by older MQTT versions, preserving switches."""
+    """Remove obsolete telemetry, preserving switches and functional detectors."""
     from homeassistant.helpers import device_registry as dr
     from homeassistant.helpers import entity_registry as er
+
+    from .mqtt_models import FUNCTIONAL_BINARY_KEYS
 
     entities = er.async_get(hass)
     prefix = f"mqtt_{entry.entry_id}_"
@@ -116,7 +118,16 @@ def _async_remove_mqtt_read_only_entities(hass, entry, hub) -> None:
         if (
             entity.platform == DOMAIN
             and entity.unique_id.startswith(prefix)
-            and entity.domain in {"sensor", "binary_sensor"}
+            and (
+                entity.domain == "sensor"
+                or (
+                    entity.domain == "binary_sensor"
+                    and not any(
+                        entity.unique_id.endswith(f"_{key}")
+                        for key in FUNCTIONAL_BINARY_KEYS
+                    )
+                )
+            )
         ):
             entities.async_remove(entity.entity_id)
 

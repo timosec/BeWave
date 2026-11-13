@@ -72,7 +72,7 @@ def async_setup_mqtt_platform(
     hass, entry, async_add_entities, platform, entity_class
 ) -> None:
     """Add existing entities and discover fields that arrive later."""
-    from .mqtt_models import FIELDS
+    from .mqtt_models import FIELDS, FUNCTIONAL_BINARY_KEYS, binary_description
 
     hub = hass.data[DOMAIN][entry.entry_id]
     known: set[tuple[str, str]] = set()
@@ -89,8 +89,19 @@ def async_setup_mqtt_platform(
                     or key in known
                 ):
                     continue
+                if (
+                    field.key == "violation"
+                    and ((FUNCTIONAL_BINARY_KEYS - {"violation"}) | {"on_off"})
+                    & device.values.keys()
+                ):
+                    continue
                 known.add(key)
-                entities.append(entity_class(hub, device, field))
+                description = (
+                    binary_description(device, field)
+                    if platform == "binary_sensor"
+                    else field
+                )
+                entities.append(entity_class(hub, device, description))
         if entities:
             async_add_entities(entities)
 

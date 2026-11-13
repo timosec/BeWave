@@ -15,7 +15,13 @@ from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
-from .mqtt_models import MqttDevice, binary_value, decode_message, device_identity
+from .mqtt_models import (
+    FIELD_BY_KEY,
+    MqttDevice,
+    binary_value,
+    decode_message,
+    device_identity,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +66,7 @@ class BeWaveMqttHub:
                 decode_message(device.topic, {}, self.prefix)
             except (ValueError, KeyError, TypeError):
                 continue
-            if "on_off" not in device.values:
+            if not device.values:
                 continue
             self.devices[device.identity] = device
             self._routes[device.topic] = device.identity
@@ -159,7 +165,7 @@ class BeWaveMqttHub:
         # A discovery message is not needed: the native integration creates
         # its own registry devices and entities from these telemetry fields.
         if identity not in self.devices:
-            if "on_off" not in payload:
+            if not FIELD_BY_KEY.keys() & payload.keys():
                 # A non-controllable device can replace a previously known
                 # output at this index. Never keep the old command route live.
                 previous = self._routes.pop(message.topic, None)

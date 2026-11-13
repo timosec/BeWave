@@ -142,12 +142,12 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # translation (from the former single-host form) renders empty rows.
         labels = (
             {
-                "mqtt": "MQTT — automatisch schakelaars toevoegen",
+                "mqtt": "MQTT — apparaten en melders toevoegen",
                 "tcp": "TCP — bestaande virtuele apparaten",
             }
             if self.hass.config.language.startswith("nl")
             else {
-                "mqtt": "MQTT — discover switches automatically",
+                "mqtt": "MQTT — discover devices and detectors",
                 "tcp": "TCP — legacy virtual devices",
             }
         )

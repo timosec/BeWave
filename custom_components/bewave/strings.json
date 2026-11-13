@@ -6,7 +6,7 @@
         "title": "BE WAVE",
         "description": "Choose the connection method.",
         "menu_options": {
-          "mqtt": "MQTT — discover switches automatically",
+          "mqtt": "MQTT — discover devices and detectors",
           "tcp": "TCP — legacy virtual devices"
         }
       },
@@ -38,7 +38,7 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Only controllable devices are added, without measurement or diagnostic entities. Status base topic matches BE WAVE Publish topic; command base topic matches Subscribe topic. Example: bewave and bewave/command.",
+        "description": "Switches and functional detectors are discovered automatically, without diagnostic entities. Status base topic matches BE WAVE Publish topic; command base topic matches Subscribe topic. Example: bewave and bewave/command.",
         "data": {
           "name": "Name",
           "topic_prefix": "Status base topic (BE WAVE Publish topic)",

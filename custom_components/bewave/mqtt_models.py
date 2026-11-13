@@ -25,8 +25,35 @@ class Field:
     diagnostic: bool = False
 
 
-FIELDS = (Field("on_off", "Schakelaar", "switch"),)
+FIELDS = (
+    Field("on_off", "Schakelaar", "switch"),
+    Field("motion", "Beweging", "binary_sensor", "motion"),
+    Field("magnetic", "Magneetcontact", "binary_sensor", "opening"),
+    Field("vibration", "Trilling", "binary_sensor", "vibration"),
+    Field("smoke", "Rook", "binary_sensor", "smoke"),
+    Field("gas", "Gas", "binary_sensor", "gas"),
+    Field("flood", "Waterdetectie", "binary_sensor", "moisture"),
+    Field("glass_break", "Glasbreuk", "binary_sensor", "sound"),
+    Field("violation", "Detectie", "binary_sensor"),
+)
 FIELD_BY_KEY = {item.key: item for item in FIELDS}
+FUNCTIONAL_BINARY_KEYS = {
+    item.key for item in FIELDS if item.platform == "binary_sensor"
+}
+
+
+def binary_description(device: MqttDevice, field: Field) -> Field:
+    """Give generic violation fields the actual detector's function."""
+    if field.key == "gas" and device.model.upper().startswith("ACMD_"):
+        return Field(field.key, "Koolmonoxide", "binary_sensor", "carbon_monoxide")
+    if field.key != "violation":
+        return field
+    model = device.model.upper()
+    if model.startswith(("APD_", "APCAM_", "SLIM_PIR")):
+        return Field(field.key, "Beweging", "binary_sensor", "motion")
+    if model.startswith("ASD_"):
+        return Field(field.key, "Rook", "binary_sensor", "smoke")
+    return field
 
 
 def normalize_prefix(value: str) -> str:

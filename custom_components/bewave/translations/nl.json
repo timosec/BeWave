@@ -6,7 +6,7 @@
         "title": "BE WAVE",
         "description": "Kies de verbindingsmethode.",
         "menu_options": {
-          "mqtt": "MQTT — automatisch schakelaars toevoegen",
+          "mqtt": "MQTT — apparaten en melders toevoegen",
           "tcp": "TCP — bestaande virtuele apparaten"
         }
       },
@@ -38,7 +38,7 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Alleen schakelbare apparaten worden toegevoegd, zonder meet- en diagnose-entiteiten. Status-basistopic = Publish topic in de BE WAVE-app. Commando-basistopic = Subscribe topic. Voorbeeld: bewave en bewave/command.",
+        "description": "Schakelaars en functionele melders worden automatisch toegevoegd, zonder diagnose-entiteiten. Status-basistopic = Publish topic in de BE WAVE-app. Commando-basistopic = Subscribe topic. Voorbeeld: bewave en bewave/command.",
         "data": {
           "name": "Naam",
           "topic_prefix": "Status-basistopic (Publish topic BE WAVE)",
