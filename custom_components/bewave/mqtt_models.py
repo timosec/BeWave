@@ -25,32 +25,8 @@ class Field:
     diagnostic: bool = False
 
 
-FIELDS = (
-    Field("temperature", "Temperatuur", device_class="temperature", unit="°C"),
-    Field("battery", "Batterij", device_class="battery", unit="%", diagnostic=True),
-    Field("signal", "Signaal", unit="%", diagnostic=True),
-    Field(
-        "voltage_supply",
-        "Voedingsspanning",
-        device_class="voltage",
-        unit="V",
-        diagnostic=True,
-    ),
-    Field("errors_count", "Fouten", diagnostic=True),
-    Field("errors_memory_count", "Foutgeheugen", diagnostic=True),
-    Field("fw_version", "Firmwareversie", diagnostic=True),
-    Field("magnetic", "Raamcontact", "binary_sensor", "window"),
-    Field("vibration", "Trilling", "binary_sensor", "vibration"),
-    Field("violation", "Detectie", "binary_sensor"),
-    Field("on_off", "Status", "binary_sensor"),
-    Field("alarm_armed", "Ingeschakeld", "binary_sensor"),
-    Field("alarm_detected", "Alarm", "binary_sensor", "problem"),
-    Field("warning_alarm", "Waarschuwing", "binary_sensor", "problem"),
-    Field("block_unblock", "Geblokkeerd", "binary_sensor"),
-    Field("on_off", "Schakelaar", "switch"),
-)
+FIELDS = (Field("on_off", "Schakelaar", "switch"),)
 FIELD_BY_KEY = {item.key: item for item in FIELDS}
-METADATA = {"name", "type", "fw_version"}
 
 
 def normalize_prefix(value: str) -> str:

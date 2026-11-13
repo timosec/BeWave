@@ -9,10 +9,8 @@ from homeassistant.core import HomeAssistant
 from .const import (
     CONF_COMMAND_PREFIX,
     CONF_DEVICES,
-    CONF_EXPIRE_AFTER,
     CONF_TOPIC_PREFIX,
     CONF_TRANSPORT,
-    DEFAULT_EXPIRE_AFTER,
     DOMAIN,
     MQTT_PLATFORMS,
     PLATFORMS,
@@ -79,9 +77,6 @@ async def _async_setup_mqtt_entry(
         entry.data[CONF_TOPIC_PREFIX],
         entry.options.get("name", entry.data.get("name", "BE WAVE")),
         entry.options.get(
-            CONF_EXPIRE_AFTER, entry.data.get(CONF_EXPIRE_AFTER, DEFAULT_EXPIRE_AFTER)
-        ),
-        entry.options.get(
             CONF_COMMAND_PREFIX,
             entry.data.get(
                 CONF_COMMAND_PREFIX, f"{entry.data[CONF_TOPIC_PREFIX]}/command"
@@ -98,6 +93,7 @@ async def _async_setup_mqtt_entry(
         name=hub.name,
     )
     hub.hub_device_id = parent.id
+    _async_remove_mqtt_read_only_entities(hass, entry, hub)
     try:
         await hass.config_entries.async_forward_entry_setups(entry, MQTT_PLATFORMS)
         await hub.async_start()
@@ -107,3 +103,33 @@ async def _async_setup_mqtt_entry(
         hass.data[DOMAIN].pop(entry.entry_id, None)
         raise
     return True
+
+
+def _async_remove_mqtt_read_only_entities(hass, entry, hub) -> None:
+    """Remove telemetry created by older MQTT versions, preserving switches."""
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    entities = er.async_get(hass)
+    prefix = f"mqtt_{entry.entry_id}_"
+    for entity in tuple(er.async_entries_for_config_entry(entities, entry.entry_id)):
+        if (
+            entity.platform == DOMAIN
+            and entity.unique_id.startswith(prefix)
+            and entity.domain in {"sensor", "binary_sensor"}
+        ):
+            entities.async_remove(entity.entity_id)
+
+    devices = dr.async_get(hass)
+    for child in tuple(dr.async_entries_for_parent_device(devices, hub.hub_device_id)):
+        if (
+            child.config_entry_id == entry.entry_id
+            and any(
+                domain == DOMAIN and identifier.startswith(prefix)
+                for domain, identifier in child.identifiers
+            )
+            and not er.async_entries_for_device(
+                entities, child.id, include_disabled_entities=True
+            )
+        ):
+            devices.async_remove_device(child.id)

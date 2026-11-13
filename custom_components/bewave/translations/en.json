@@ -6,7 +6,7 @@
         "title": "BE WAVE",
         "description": "Choose the connection method.",
         "menu_options": {
-          "mqtt": "MQTT — discover devices automatically",
+          "mqtt": "MQTT — discover switches automatically",
           "tcp": "TCP — legacy virtual devices"
         }
       },
@@ -38,11 +38,10 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Use the same MQTT broker as BE WAVE. Status base topic matches Publish topic in BE WAVE. Command base topic matches Subscribe topic in BE WAVE. Example: status bewave and command bewave/command. Devices appear when telemetry arrives.",
+        "description": "Only controllable devices are added, without measurement or diagnostic entities. Status base topic matches BE WAVE Publish topic; command base topic matches Subscribe topic. Example: bewave and bewave/command.",
         "data": {
           "name": "Name",
           "topic_prefix": "Status base topic (BE WAVE Publish topic)",
-          "expire_after": "Status expiry (seconds)",
           "command_prefix": "Command base topic (BE WAVE Subscribe topic)"
         }
       },
@@ -114,10 +113,9 @@
       },
       "mqtt": {
         "title": "BE WAVE MQTT",
-        "description": "Change the name, command base topic and expiry. Command base topic must match Subscribe topic in BE WAVE. To change broker IP, open [the MQTT integration](/config/integrations/integration/mqtt) and select Reconfigure.",
+        "description": "Change the name and command base topic. Switches have no inactivity expiry. The command base topic must match BE WAVE Subscribe topic. To change broker IP, open [the MQTT integration](/config/integrations/integration/mqtt) and select Reconfigure.",
         "data": {
           "name": "Name",
-          "expire_after": "Status expiry (seconds)",
           "command_prefix": "Command base topic (BE WAVE Subscribe topic)"
         }
       },

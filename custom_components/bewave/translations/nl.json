@@ -6,7 +6,7 @@
         "title": "BE WAVE",
         "description": "Kies de verbindingsmethode.",
         "menu_options": {
-          "mqtt": "MQTT — automatisch apparaten toevoegen",
+          "mqtt": "MQTT — automatisch schakelaars toevoegen",
           "tcp": "TCP — bestaande virtuele apparaten"
         }
       },
@@ -38,11 +38,10 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Gebruik dezelfde MQTT-broker als BE WAVE. Status-basistopic = Publish topic in de BE WAVE-app. Commando-basistopic = Subscribe topic in de BE WAVE-app. Voorbeeld: status bewave en commando bewave/command. Apparaten verschijnen zodra zij een statusbericht versturen.",
+        "description": "Alleen schakelbare apparaten worden toegevoegd, zonder meet- en diagnose-entiteiten. Status-basistopic = Publish topic in de BE WAVE-app. Commando-basistopic = Subscribe topic. Voorbeeld: bewave en bewave/command.",
         "data": {
           "name": "Naam",
           "topic_prefix": "Status-basistopic (Publish topic BE WAVE)",
-          "expire_after": "Vervaltijd status (seconden)",
           "command_prefix": "Commando-basistopic (Subscribe topic BE WAVE)"
         }
       },
@@ -114,10 +113,9 @@
       },
       "mqtt": {
         "title": "BE WAVE MQTT",
-        "description": "Pas naam, commando-basistopic en vervaltijd aan. Het commando-basistopic moet overeenkomen met Subscribe topic in de BE WAVE-app. Broker-IP wijzigen? Open [de MQTT-integratie](/config/integrations/integration/mqtt) en kies Opnieuw configureren.",
+        "description": "Pas de naam en het commando-basistopic aan. Schakelaars hebben geen vervaltijd bij inactiviteit. Het commando-basistopic moet overeenkomen met Subscribe topic in de BE WAVE-app. Broker-IP wijzigen? Open [de MQTT-integratie](/config/integrations/integration/mqtt) en kies Opnieuw configureren.",
         "data": {
           "name": "Naam",
-          "expire_after": "Vervaltijd status (seconden)",
           "command_prefix": "Commando-basistopic (Subscribe topic BE WAVE)"
         }
       },

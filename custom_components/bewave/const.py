@@ -3,12 +3,10 @@
 DOMAIN = "bewave"
 CONF_TRANSPORT = "transport"
 CONF_TOPIC_PREFIX = "topic_prefix"
-CONF_EXPIRE_AFTER = "expire_after"
 CONF_COMMAND_PREFIX = "command_prefix"
 TRANSPORT_MQTT = "mqtt"
 DEFAULT_TOPIC_PREFIX = "bewave"
-DEFAULT_EXPIRE_AFTER = 180
-MQTT_PLATFORMS = ["sensor", "binary_sensor", "switch"]
+MQTT_PLATFORMS = ["switch"]
 DEFAULT_TARGET_PORT = 5000
 DEFAULT_LISTEN_PORT = 5000
 DEFAULT_MOMENTARY_RESET_MS = 800

@@ -6,13 +6,12 @@ import asyncio
 import json
 import logging
 from collections.abc import Callable
-from datetime import timedelta
 from time import monotonic
 
 from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
@@ -30,14 +29,12 @@ class BeWaveMqttHub:
         entry_id: str,
         prefix: str,
         name: str,
-        expire_after: int,
         command_prefix: str,
     ) -> None:
         self.hass = hass
         self.entry_id = entry_id
         self.prefix = prefix
         self.name = name
-        self.expire_after = expire_after
         self.command_prefix = command_prefix
         self.devices: dict[str, MqttDevice] = {}
         self.connected = False
@@ -45,6 +42,7 @@ class BeWaveMqttHub:
         self._routes: dict[str, str] = {}
         self._listeners: set[Callable[[], None]] = set()
         self._unsubs: list[Callable[[], None]] = []
+        self._cancel_sync: Callable[[], None] | None = None
         self._store = Store(hass, 1, f"{DOMAIN}.mqtt.{entry_id}")
 
     @property
@@ -62,6 +60,8 @@ class BeWaveMqttHub:
                 decode_message(device.topic, {}, self.prefix)
             except (ValueError, KeyError, TypeError):
                 continue
+            if "on_off" not in device.values:
+                continue
             self.devices[device.identity] = device
             self._routes[device.topic] = device.identity
 
@@ -76,15 +76,16 @@ class BeWaveMqttHub:
                 self.hass, f"{self.prefix}/devices/+/tx", self._receive, qos=0
             )
         )
-        self._unsubs.append(
-            async_track_time_interval(self.hass, self._tick, timedelta(seconds=15))
-        )
+        self._schedule_sync()
 
     async def async_stop(self) -> None:
         """Remove subscriptions/timers and flush discovery metadata."""
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        if self._cancel_sync:
+            self._cancel_sync()
+            self._cancel_sync = None
         self.connected = False
         self._listeners.clear()
         await self._store.async_save(self._snapshot())
@@ -106,11 +107,40 @@ class BeWaveMqttHub:
             # Do not revive cached alarm/contact states on broker reconnect.
             for device in self.devices.values():
                 device.updated.clear()
+            if self._cancel_sync:
+                self._cancel_sync()
+                self._cancel_sync = None
+        else:
+            self._schedule_sync()
         self._notify()
 
     @callback
-    def _tick(self, _now) -> None:
-        self._notify()
+    def _schedule_sync(self) -> None:
+        """Request live statuses once subscriptions can be sent to the broker."""
+        if not self.connected:
+            return
+        if self._cancel_sync:
+            self._cancel_sync()
+        self._cancel_sync = async_call_later(self.hass, 1, self._sync)
+
+    async def _sync(self, _now) -> None:
+        """Refresh devices after start/reconnect, without switching any output."""
+        if self._cancel_sync:
+            self._cancel_sync()
+        self._cancel_sync = None
+        if not self.connected or not mqtt.is_connected(self.hass):
+            return
+        try:
+            async with asyncio.timeout(5):
+                await mqtt.async_publish(
+                    self.hass,
+                    f"{self.command_prefix}/system/rx",
+                    json.dumps({"action": "SYNC"}),
+                    qos=0,
+                    retain=False,
+                )
+        except (HomeAssistantError, TimeoutError):
+            _LOGGER.debug("BE WAVE status sync could not be sent")
 
     @callback
     def _receive(self, message: mqtt.ReceiveMessage) -> None:
@@ -129,6 +159,14 @@ class BeWaveMqttHub:
         # A discovery message is not needed: the native integration creates
         # its own registry devices and entities from these telemetry fields.
         if identity not in self.devices:
+            if "on_off" not in payload:
+                # A non-controllable device can replace a previously known
+                # output at this index. Never keep the old command route live.
+                previous = self._routes.pop(message.topic, None)
+                if previous is not None:
+                    self.devices[previous].updated.clear()
+                    self._notify()
+                return
             self.devices[identity] = MqttDevice(
                 identity, message.topic, identity, "BE WAVE"
             )
@@ -151,12 +189,9 @@ class BeWaveMqttHub:
         self._notify()
 
     def field_available(self, device: MqttDevice, key: str) -> bool:
-        updated = device.updated.get(key)
-        return (
-            self.connected
-            and updated is not None
-            and monotonic() - updated <= self.expire_after
-        )
+        # Relay statuses are often sent on change only. The last live state
+        # remains usable for this broker session, without an idle timeout.
+        return self.connected and device.updated.get(key) is not None
 
     async def async_set_output(self, device: MqttDevice, enabled: bool) -> None:
         """Send a non-retained command to the current device index, never a serial."""

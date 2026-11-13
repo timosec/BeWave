@@ -13,13 +13,11 @@ from .const import (
     CONF_COMMAND_ON,
     CONF_COMMAND_PREFIX,
     CONF_DEVICES,
-    CONF_EXPIRE_AFTER,
     CONF_LISTEN_PORT,
     CONF_OFF_MESSAGE,
     CONF_ON_MESSAGE,
     CONF_TOPIC_PREFIX,
     CONF_TRANSPORT,
-    DEFAULT_EXPIRE_AFTER,
     DEFAULT_LISTEN_PORT,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
@@ -47,10 +45,6 @@ def _mqtt_schema(defaults=None, *, options=False) -> vol.Schema:
                 f"{defaults.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)}/command",
             ),
         ): str,
-        vol.Required(
-            CONF_EXPIRE_AFTER,
-            default=defaults.get(CONF_EXPIRE_AFTER, DEFAULT_EXPIRE_AFTER),
-        ): vol.All(vol.Coerce(int), vol.Range(min=60, max=86400)),
     }
     if not options:
         fields[
@@ -144,7 +138,20 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Choose automatic MQTT discovery or legacy virtual TCP zones."""
-        return self.async_show_menu(step_id="user", menu_options=["mqtt", "tcp"])
+        # Supply labels as well as translation keys. Otherwise an older cached
+        # translation (from the former single-host form) renders empty rows.
+        labels = (
+            {
+                "mqtt": "MQTT — automatisch schakelaars toevoegen",
+                "tcp": "TCP — bestaande virtuele apparaten",
+            }
+            if self.hass.config.language.startswith("nl")
+            else {
+                "mqtt": "MQTT — discover switches automatically",
+                "tcp": "TCP — legacy virtual devices",
+            }
+        )
+        return self.async_show_menu(step_id="user", menu_options=labels)
 
     async def async_step_mqtt(self, user_input: dict[str, Any] | None = None):
         """Configure telemetry; credentials belong to the MQTT integration."""
@@ -175,7 +182,6 @@ class BeWaveConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_TRANSPORT: TRANSPORT_MQTT,
                             CONF_TOPIC_PREFIX: prefix,
                             "name": name,
-                            CONF_EXPIRE_AFTER: user_input[CONF_EXPIRE_AFTER],
                             CONF_COMMAND_PREFIX: command_prefix,
                         },
                     )

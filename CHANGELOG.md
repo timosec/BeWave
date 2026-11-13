@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0
+
+- Discover only devices/channels with `on_off`, exposing one switch each.
+- Ignore diagnostic and measurement fields and remove old generated telemetry entities and empty child devices during upgrade.
+- Preserve existing switch identities.
+- Remove the 180-second idle expiry and its options field, including the effect of older saved expiry options.
+- Request a one-time status SYNC after setup/reconnection.
+- Keep live-feedback, disconnect and route-replacement protections.
+- Add idle-output, upgrade-cleanup, old-cache filtering and synchronization regressions.
+
+## 0.6.1
+
+- Supply explicit MQTT/TCP menu labels, so missing or older cached translations cannot render empty options.
+- Test menu labels and actual Home Assistant translation loading in Dutch and English.
+- Keep MQTT control and existing configuration unchanged.
+
 ## 0.6.0
 
 - Add native on/off switches for components reporting `on_off`.

@@ -1,3 +1,3 @@
 # BE WAVE
 
-Native MQTT telemetry with automatic device discovery and child devices. Legacy virtual TCP zones remain supported. See README-MQTT-NL.md for setup and migration.
+Native MQTT switches for controllable components, grouped under a BE WAVE hub. No diagnostic entities and no inactivity expiry. Legacy TCP zones remain supported. See README-MQTT-NL.md.
