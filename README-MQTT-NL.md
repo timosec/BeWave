@@ -96,21 +96,6 @@ link naar dit scherm. Wijzig zo nodig hetzelfde brokeradres in de BE WAVE-app.
 
 De MQTT-versie heeft geen afzonderlijk BE WAVE-hub-IP-adres nodig.
 
-## Overstappen vanaf de Node-RED-proef
-
-1. Installeer en test de BE WAVE-integratie terwijl de bestaande proef nog werkt.
-2. Er zijn tijdelijk dubbele entiteiten: de oude onder MQTT en de nieuwe onder BE WAVE.
-3. Pas dashboards en automatiseringen aan naar de nieuwe BE WAVE-entiteiten.
-   De MQTT-entiteits-ID's worden niet automatisch overgenomen.
-4. Schakel de BE WAVE-discoveryflow in Node-RED uit en klik Deploy.
-5. Verwijder pas daarna de oude BE WAVE-apparaten onder de MQTT-integratie.
-   Home Assistant verwijdert daarbij de betreffende retained discoveryconfiguratie.
-   Laat andere MQTT-apparaten en de broker zelf staan.
-
-Deze integratie publiceert geen discoveryconfiguraties en verwijdert ook geen
-configuraties van andere integraties. Bestaande TCP-koppelingen blijven werken
-en kunnen naast MQTT blijven bestaan tot de overstap is voltooid.
-
 ## Herstarten en beschikbaarheid
 
 Ontdekte apparaatnamen, types en veldnamen worden opgeslagen, zodat de entiteiten
