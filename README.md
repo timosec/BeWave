@@ -1,4 +1,4 @@
-# BE WAVE — MQTT switches and legacy TCP
+<img width="1205" height="4365" alt="image" src="https://github.com/user-attachments/assets/27769f1c-db83-42e6-be79-e40d42491141" /># BE WAVE — MQTT switches and legacy TCP
 
 Version **0.10.0** discovers native switches and functional detectors under a BE WAVE hub, including motion, magnetic contacts, vibration, smoke and other reported detections. Diagnostic entities are not created. Requires Home Assistant 2026.10.0 or newer.
 
@@ -8,6 +8,9 @@ Version **0.10.0** discovers native switches and functional detectors under a BE
 2. Configure Home Assistant’s MQTT integration.
 3. Add **BE WAVE → MQTT**. Use the status base matching BE WAVE Publish topic and command base matching Subscribe topic; for example `bewave` and `bewave/command`.
 4. Switches and functional detectors are added without battery, signal, firmware or error-counter entities.
+
+5. <img width="1205" height="4365" alt="image" src="https://github.com/user-attachments/assets/68c5d3b4-9d55-42d4-80a0-5809bbaf31ee" />
+
 
 Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. Obsolete measurement/diagnostic entities are cleaned up only for this integration’s MQTT entry, preserving functional detectors.
 
