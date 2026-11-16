@@ -125,12 +125,51 @@
         "data": {
           "host": "Hub IP-adres of hostnaam"
         }
+      },
+      "mqtt_menu": {
+        "title": "BE WAVE beheren",
+        "description": "Instellingen wijzigen, nieuwe apparaten zoeken of een oude vermelding verwijderen.",
+        "menu_options": {
+          "mqtt": "MQTT-instellingen",
+          "search": "Zoeken naar nieuwe apparaten",
+          "remove_mqtt_device": "Apparaat verwijderen",
+          "restore_mqtt_device": "Verwijderd apparaat herstellen"
+        }
+      },
+      "search": {
+        "title": "Zoeken naar nieuwe apparaten",
+        "description": "Vraagt BE WAVE om synchronisatie. Nieuwe apparaten verschijnen zodra hun MQTT-status binnenkomt. Verwijderde apparaten blijven uitgesloten."
+      },
+      "remove_mqtt_device": {
+        "title": "Apparaat verwijderen",
+        "description": "Kies het apparaat dat uit deze Home Assistant-koppeling moet verdwijnen. De vermelding komt niet automatisch terug. Het apparaat zelf blijft in BE WAVE aanwezig. Type en nummer helpen bij dubbele namen.",
+        "data": {
+          "device_id": "Apparaat"
+        }
+      },
+      "restore_mqtt_device": {
+        "title": "Verwijderd apparaat herstellen",
+        "description": "Kies welk eerder verwijderd apparaat weer mag worden toegevoegd. Het verschijnt zodra de hub opnieuw een statusbericht verstuurt.",
+        "data": {
+          "device_id": "Apparaat"
+        }
       }
     },
     "error": {
       "invalid_device": "Controleer de zonevelden. Naam en commando zijn verplicht en feedback moet zowel een AAN- als UIT-bericht bevatten als je het gebruikt.",
       "host_already_configured": "Dit hub-adres is al in gebruik bij een andere BE WAVE-koppeling.",
-      "invalid_host": "Vul een IP-adres of hostnaam in."
+      "invalid_host": "Vul een IP-adres of hostnaam in.",
+      "mqtt_not_ready": "MQTT is niet verbonden. Controleer de MQTT-integratie en probeer opnieuw.",
+      "integration_not_loaded": "Schakel deze BE WAVE-koppeling in en probeer opnieuw.",
+      "device_not_found": "Dit apparaat staat niet meer in de lijst. Open apparaatbeheer opnieuw."
+    },
+    "abort": {
+      "search_started": "Zoekopdracht verstuurd. Nieuwe apparaten worden toegevoegd zodra BE WAVE hun status verstuurt.",
+      "device_removed": "Apparaat verwijderd uit deze koppeling. Het wordt niet automatisch opnieuw toegevoegd.",
+      "device_restored": "Apparaat weer toegestaan. Het verschijnt na een nieuw statusbericht van BE WAVE.",
+      "no_devices": "Er zijn geen verwijderbare apparaten in deze BE WAVE-koppeling.",
+      "no_removed_devices": "Er zijn geen eerder verwijderde apparaten om te herstellen.",
+      "device_not_found": "Dit apparaat staat niet meer in de lijst."
     }
   }
 }

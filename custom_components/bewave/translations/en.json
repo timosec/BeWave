@@ -125,12 +125,51 @@
         "data": {
           "host": "Hub IP address or hostname"
         }
+      },
+      "mqtt_menu": {
+        "title": "Manage BE WAVE",
+        "description": "Change settings, search for new devices or remove an old record.",
+        "menu_options": {
+          "mqtt": "MQTT settings",
+          "search": "Search for new devices",
+          "remove_mqtt_device": "Remove a device",
+          "restore_mqtt_device": "Restore a removed device"
+        }
+      },
+      "search": {
+        "title": "Search for new devices",
+        "description": "Request a BE WAVE synchronization. New devices appear when their MQTT status arrives. Removed devices remain excluded."
+      },
+      "remove_mqtt_device": {
+        "title": "Remove a device",
+        "description": "Choose the device to remove from this Home Assistant connection. It will not reappear automatically. The device stays in BE WAVE. Type and ID help distinguish duplicate names.",
+        "data": {
+          "device_id": "Device"
+        }
+      },
+      "restore_mqtt_device": {
+        "title": "Restore a removed device",
+        "description": "Choose a previously removed device to allow again. It appears after a new status message from the hub.",
+        "data": {
+          "device_id": "Device"
+        }
       }
     },
     "error": {
       "invalid_device": "Check the zone fields. Name and command are required, and feedback must contain both ON and OFF messages if used.",
       "host_already_configured": "This hub address is already configured by another BE WAVE entry.",
-      "invalid_host": "Enter an IP address or hostname."
+      "invalid_host": "Enter an IP address or hostname.",
+      "mqtt_not_ready": "MQTT is not connected. Check the MQTT integration and try again.",
+      "integration_not_loaded": "Enable this BE WAVE connection and try again.",
+      "device_not_found": "This device is no longer listed. Reopen device management."
+    },
+    "abort": {
+      "search_started": "Search requested. New devices are added when BE WAVE publishes their status.",
+      "device_removed": "Device removed from this connection. It will not be added again automatically.",
+      "device_restored": "Device allowed again. It appears after a new BE WAVE status message.",
+      "no_devices": "There are no removable devices in this BE WAVE connection.",
+      "no_removed_devices": "There are no removed devices to restore.",
+      "device_not_found": "This device is no longer listed."
     }
   }
 }

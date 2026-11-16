@@ -316,7 +316,7 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Manage BeWave zones."""
         if self.config_entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
-            return await self.async_step_mqtt(user_input)
+            return await self.async_step_mqtt_menu(user_input)
 
         if not self._devices:
             self._devices = list(
@@ -359,8 +359,100 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             description_placeholders={"zone_count": str(len(self._devices))},
         )
 
+    async def async_step_mqtt_menu(self, user_input=None):
+        """Expose device management separately from connection settings."""
+        from .device_management import async_ignored_devices
+
+        nl = self.hass.config.language.startswith("nl")
+        choices = {
+            "mqtt": "MQTT-instellingen" if nl else "MQTT settings",
+            "search": "Zoeken naar nieuwe apparaten"
+            if nl
+            else "Search for new devices",
+            "remove_mqtt_device": "Apparaat verwijderen" if nl else "Remove a device",
+        }
+        if await async_ignored_devices(self.hass, self.config_entry):
+            choices["restore_mqtt_device"] = (
+                "Verwijderd apparaat herstellen" if nl else "Restore a removed device"
+            )
+        return self.async_show_menu(step_id="mqtt_menu", menu_options=choices)
+
+    async def async_step_search(self, user_input=None):
+        """Request discovery without clearing intentional device exclusions."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        errors = {}
+        hub = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        if hub is None:
+            errors["base"] = "integration_not_loaded"
+        else:
+            try:
+                await hub.async_request_discovery()
+            except HomeAssistantError:
+                errors["base"] = "mqtt_not_ready"
+            else:
+                return self.async_abort(reason="search_started")
+        return self.async_show_form(
+            step_id="search", data_schema=vol.Schema({}), errors=errors
+        )
+
+    async def async_step_remove_mqtt_device(self, user_input=None):
+        """Select even an inactive registry device, then persist its removal."""
+        from .device_management import async_forget_mqtt_device, mqtt_devices
+
+        devices = mqtt_devices(self.hass, self.config_entry)
+        if not devices:
+            return self.async_abort(reason="no_devices")
+        errors = {}
+        if user_input is not None:
+            identity = user_input["device_id"]
+            if identity not in devices:
+                errors["base"] = "device_not_found"
+            else:
+                await async_forget_mqtt_device(
+                    self.hass,
+                    self.config_entry,
+                    identity,
+                    remove_registry=True,
+                    name=devices[identity]["name"],
+                )
+                return self.async_abort(reason="device_removed")
+        choices = {
+            identity: f"{device['name']} — {device['model'] or 'BE WAVE'} [{identity}]"
+            for identity, device in sorted(
+                devices.items(), key=lambda item: item[1]["name"].casefold()
+            )
+        }
+        return self.async_show_form(
+            step_id="remove_mqtt_device",
+            data_schema=vol.Schema({vol.Required("device_id"): vol.In(choices)}),
+            errors=errors,
+        )
+
+    async def async_step_restore_mqtt_device(self, user_input=None):
+        """Let the user choose which intentionally removed device may return."""
+        from .device_management import async_ignored_devices, async_restore_mqtt_device
+
+        ignored = await async_ignored_devices(self.hass, self.config_entry)
+        if not ignored:
+            return self.async_abort(reason="no_removed_devices")
+        if user_input is not None:
+            identity = user_input["device_id"]
+            if identity not in ignored:
+                return self.async_abort(reason="device_not_found")
+            await async_restore_mqtt_device(self.hass, self.config_entry, identity)
+            return self.async_abort(reason="device_restored")
+        choices = {
+            identity: f"{device.get('name') or identity} [{identity}]"
+            for identity, device in ignored.items()
+        }
+        return self.async_show_form(
+            step_id="restore_mqtt_device",
+            data_schema=vol.Schema({vol.Required("device_id"): vol.In(choices)}),
+        )
+
     async def async_step_mqtt(self, user_input: dict[str, Any] | None = None):
-        """Change the display name or stale telemetry timeout."""
+        """Change the display name or command base topic."""
         errors = {}
         if user_input is not None:
             try:

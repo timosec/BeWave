@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_TRANSPORT, DOMAIN, TRANSPORT_MQTT
 from .entity import BeWaveBaseEntity
 from .tcp import BeWaveHub
 
@@ -24,10 +24,35 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up BeWave button entities."""
+    if entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
+        async_add_entities([BeWaveDiscoverButton(hass.data[DOMAIN][entry.entry_id])])
+        return
     hub: BeWaveHub = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         BeWaveTriggerButton(hub, hub.get_device(device.id)) for device in hub.devices
     )
+
+
+class BeWaveDiscoverButton(ButtonEntity):
+    """Ask the MQTT hub to publish new device statuses."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_name = "Zoeken naar nieuwe apparaten"
+    _attr_icon = "mdi:magnify"
+
+    def __init__(self, hub):
+        self._hub = hub
+        self._attr_unique_id = f"mqtt_{hub.entry_id}_discover"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, hub.hub_identifier)},
+            "name": hub.name,
+            "manufacturer": "SATEL",
+            "model": "BE WAVE MQTT",
+        }
+
+    async def async_press(self):
+        await self._hub.async_request_discovery()
 
 
 class BeWaveTriggerButton(BeWaveBaseEntity, ButtonEntity):

@@ -43,6 +43,7 @@ class BeWaveMqttHub:
         self.name = name
         self.command_prefix = command_prefix
         self.devices: dict[str, MqttDevice] = {}
+        self.ignored: dict[str, dict[str, str]] = {}
         self.connected = False
         self.hub_device_id: str | None = None
         self._routes: dict[str, str] = {}
@@ -60,6 +61,13 @@ class BeWaveMqttHub:
         stored = await self._store.async_load()
         if not isinstance(stored, dict):
             return
+        ignored = stored.get("ignored", {})
+        if isinstance(ignored, dict):
+            self.ignored = {
+                key: value
+                for key, value in ignored.items()
+                if isinstance(key, str) and isinstance(value, dict)
+            }
         for raw in stored.get("devices", []):
             try:
                 device = MqttDevice.restore(raw)
@@ -67,6 +75,8 @@ class BeWaveMqttHub:
             except (ValueError, KeyError, TypeError):
                 continue
             if not device.values:
+                continue
+            if device.identity in self.ignored:
                 continue
             self.devices[device.identity] = device
             self._routes[device.topic] = device.identity
@@ -137,6 +147,17 @@ class BeWaveMqttHub:
         if not self.connected or not mqtt.is_connected(self.hass):
             return
         try:
+            await self.async_request_discovery()
+        except (HomeAssistantError, TimeoutError):
+            _LOGGER.debug("BE WAVE status sync could not be sent")
+
+    async def async_request_discovery(self) -> None:
+        """Ask for a fresh device inventory/status; never operate outputs."""
+        if not self.connected or not mqtt.is_connected(self.hass):
+            raise HomeAssistantError(
+                "BE WAVE: MQTT is niet verbonden. Controleer de MQTT-integratie."
+            )
+        try:
             async with asyncio.timeout(5):
                 await mqtt.async_publish(
                     self.hass,
@@ -145,8 +166,31 @@ class BeWaveMqttHub:
                     qos=0,
                     retain=False,
                 )
-        except (HomeAssistantError, TimeoutError):
-            _LOGGER.debug("BE WAVE status sync could not be sent")
+        except TimeoutError as err:
+            raise HomeAssistantError(
+                "BE WAVE: de zoekopdracht kon niet tijdig worden verstuurd"
+            ) from err
+
+    async def async_forget(
+        self, identity: str, name: str = "", model: str = ""
+    ) -> None:
+        """Persist an exclusion so ordinary telemetry cannot recreate a device."""
+        device = self.devices.pop(identity, None)
+        if device:
+            device.updated.clear()
+            name = device.name
+            model = device.model
+        self.ignored[identity] = {"name": name or identity, "model": model}
+        self._routes = {
+            route: key for route, key in self._routes.items() if key != identity
+        }
+        await self._store.async_save(self._snapshot())
+        self._notify()
+
+    async def async_restore(self, identity: str) -> None:
+        """Allow an explicitly selected previously removed device again."""
+        self.ignored.pop(identity, None)
+        await self._store.async_save(self._snapshot())
 
     @callback
     def _receive(self, message: mqtt.ReceiveMessage) -> None:
@@ -160,6 +204,9 @@ class BeWaveMqttHub:
                     return
         except (ValueError, TypeError):
             _LOGGER.debug("Ignoring invalid BE WAVE status on %s", message.topic)
+            return
+
+        if identity in self.ignored:
             return
 
         # A discovery message is not needed: the native integration creates
@@ -197,7 +244,11 @@ class BeWaveMqttHub:
     def field_available(self, device: MqttDevice, key: str) -> bool:
         # Relay statuses are often sent on change only. The last live state
         # remains usable for this broker session, without an idle timeout.
-        return self.connected and device.updated.get(key) is not None
+        return (
+            self.connected
+            and device.identity not in self.ignored
+            and device.updated.get(key) is not None
+        )
 
     async def async_set_output(self, device: MqttDevice, enabled: bool) -> None:
         """Send a non-retained command to the current device index, never a serial."""
@@ -231,4 +282,7 @@ class BeWaveMqttHub:
 
     @callback
     def _snapshot(self) -> dict:
-        return {"devices": [device.snapshot() for device in self.devices.values()]}
+        return {
+            "devices": [device.snapshot() for device in self.devices.values()],
+            "ignored": self.ignored,
+        }

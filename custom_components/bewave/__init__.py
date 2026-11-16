@@ -20,6 +20,43 @@ from .const import (
 BeWaveConfigEntry = ConfigEntry
 
 
+async def async_remove_config_entry_device(hass, entry, device_entry) -> bool:
+    """Allow deleting individual BE WAVE devices from the device page."""
+    if entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
+        from .device_management import async_forget_mqtt_device, mqtt_device_identity
+
+        if identity := mqtt_device_identity(entry, device_entry):
+            await async_forget_mqtt_device(
+                hass, entry, identity, name=device_entry.name or identity
+            )
+            return True
+        # Remove the hub by removing its integration, not as an individual device.
+        return False
+
+    from .models import normalize_device
+
+    host = entry.data.get("entity_host", entry.data.get(CONF_HOST))
+    raw = entry.options.get(CONF_DEVICES, entry.data.get(CONF_DEVICES, []))
+    remaining = [
+        item
+        for index, item in enumerate(raw, 1)
+        if (DOMAIN, f"{host}_{normalize_device(item, index).unique_id}")
+        not in device_entry.identifiers
+    ]
+    if len(remaining) == len(raw):
+        # Old versions may have left a device registry record after its zone
+        # was already removed. It is safe to delete that orphaned own record.
+        return any(
+            domain == DOMAIN and identifier.startswith(f"{host}_")
+            for domain, identifier in device_entry.identifiers
+        )
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, CONF_DEVICES: remaining}
+    )
+    hass.config_entries.async_schedule_reload(entry.entry_id)
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: BeWaveConfigEntry) -> bool:
     """Set up BeWave from a config entry."""
     if entry.data.get(CONF_TRANSPORT) == TRANSPORT_MQTT:
