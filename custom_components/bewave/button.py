@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_TRANSPORT, DOMAIN, TRANSPORT_MQTT
 from .entity import BeWaveBaseEntity
+from .language import function_name
 from .tcp import BeWaveHub
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,7 +39,6 @@ class BeWaveDiscoverButton(ButtonEntity):
 
     _attr_has_entity_name = True
     _attr_should_poll = False
-    _attr_name = "Zoeken naar nieuwe apparaten"
     _attr_icon = "mdi:magnify"
 
     def __init__(self, hub):
@@ -50,6 +50,16 @@ class BeWaveDiscoverButton(ButtonEntity):
             "manufacturer": "SATEL",
             "model": "BE WAVE MQTT",
         }
+
+    @property
+    def name(self):
+        return function_name(
+            self._hub.hass, self._hub.display_options, "Zoeken naar nieuwe apparaten"
+        )
+
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        self.async_on_remove(self._hub.subscribe(self.async_write_ha_state))
 
     async def async_press(self):
         await self._hub.async_request_discovery()

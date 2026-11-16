@@ -45,6 +45,7 @@ class BeWaveMqttHub:
         self.prefix = prefix
         self.name = name
         self.command_prefix = command_prefix
+        self.display_options = dict(options or {})
         preferences = storage_options(options or {})
         self.remember_devices = preferences[CONF_REMEMBER_DEVICES]
         self.retention_days = preferences[CONF_RETENTION_DAYS]
@@ -235,6 +236,15 @@ class BeWaveMqttHub:
             _, payload = decode_message(message.topic, message.payload, self.prefix)
             if "sn" in payload:
                 identity = device_identity(payload)
+                # Short updates may repeat the serial but omit the channel.
+                # Preserve a known route's channel instead of creating channel 0.
+                routed = self._routes.get(message.topic)
+                if (
+                    "channel" not in payload
+                    and routed is not None
+                    and routed.rsplit("_", 1)[0] == identity.rsplit("_", 1)[0]
+                ):
+                    identity = routed
             else:
                 identity = self._routes.get(message.topic)
                 if identity is None:

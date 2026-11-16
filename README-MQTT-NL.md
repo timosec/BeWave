@@ -1,4 +1,4 @@
-# BE WAVE via MQTT — versie 0.9.0
+# BE WAVE via MQTT — versie 0.10.0
 
 Deze Home Assistant-integratie voegt schakelaars en functionele melders toe.
 Eén BE WAVE-hoofdapparaat bevat aparte subapparaten. Per apparaat verschijnen
@@ -6,6 +6,36 @@ alleen de bedieningen en detecties die het apparaat meldt. Er zijn geen virtuele
 IP-apparaten nodig voor ondersteunde fysieke componenten.
 
 Dit is een custom integration voor Home Assistant, geen afzonderlijk Supervisor-add-onproces.
+
+## Taal en activiteit
+
+Open **BE WAVE → Configureren → Taal / Language**. Kies **Nederlands**, **English**
+of **Home Assistant** (de systeemtaal). Dit verandert functienamen zoals Beweging/Motion,
+de zoekknop en menukeuzes direct. Eigen apparaatnamen, zelf aangepaste entiteitsnamen
+en entiteit-ID’s blijven behouden. Titels en uitleg van formulieren en statusteksten
+zoals “Gedetecteerd” volgen de profieltaal van Home Assistant. Kies daar ook English
+voor een volledig Engelse interface.
+
+MQTT-instellingen opslaan herstart de integratie niet meer: actuele sensorstanden
+blijven behouden. Korte statusberichten met serienummer maar zonder kanaal worden
+gekoppeld aan het bekende kanaal op dat topic. Dat voorkomt onbedoelde duplicaten
+op kanaal 0. Herhaalde gelijke metingen veroorzaken geen extra statuswijzigingen.
+Melders worden niet door een inactiviteitstimer onbeschikbaar gemaakt.
+
+Bij een echte MQTT-verbindingsonderbreking blijft “Niet beschikbaar” zichtbaar.
+Na opnieuw verbinden is een vers statusbericht nodig. Een oude melding “geen beweging”
+wordt niet als actuele status gepresenteerd.
+
+Ontbreekt beweging nog? Luister in **Instellingen → Apparaten en diensten → MQTT →
+Configureren** naar **bewave/devices/+/tx** (of de eigen statusprefix). Verzamel het
+exacte topic met een bericht in rust en tijdens beweging voor dezelfde melder.
+Daarmee is vast te stellen welke detectievelden de hub werkelijk verstuurt.
+Een screenshot van Activiteit laat dat niet zien. De standaard fysieke melders gebruiken
+hun specifieke veld zoals `motion`, `magnetic` of `smoke`; `violation` is alleen een
+bestaande terugval en wordt niet opgeteld bij een bekend specifiek detectieveld.
+
+Het paneel Activiteit is de geschiedenis van Home Assistant en staat los van de eigen
+optionele foutlog en apparaatcache van BE WAVE.
 
 ## Opslag, loggrootte en bewaartermijn
 

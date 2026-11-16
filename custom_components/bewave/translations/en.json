@@ -134,7 +134,8 @@
           "search": "Search for new devices",
           "remove_mqtt_device": "Remove a device",
           "restore_mqtt_device": "Restore a removed device",
-          "storage": "Storage, log and retention"
+          "storage": "Storage, log and retention",
+          "language": "Taal / Language"
         }
       },
       "search": {
@@ -165,6 +166,13 @@
           "max_log_mb": "Maximum own error log size (MB)",
           "action": "Action"
         }
+      },
+      "language": {
+        "title": "Taal / Language",
+        "description": "Choose Dutch or English for function names, the search button and menu choices. Custom device names and entity IDs are preserved. Form titles and state labels such as “Detected” follow your Home Assistant profile language. The connection is not restarted.",
+        "data": {
+          "language": "Taal / Language"
+        }
       }
     },
     "error": {
@@ -185,7 +193,9 @@
       "storage_saved": "Storage settings saved. New limits have been applied.",
       "cache_cleared": "Device cache cleared. Devices and exclusions are preserved.",
       "log_cleared": "Own BE WAVE log cleared.",
-      "storage_cleared": "Device cache and own log cleared. Devices and exclusions are preserved."
+      "storage_cleared": "Device cache and own log cleared. Devices and exclusions are preserved.",
+      "language_saved": "Language saved. The connection remains active.",
+      "mqtt_saved": "MQTT settings saved. The connection remains active."
     }
   }
 }

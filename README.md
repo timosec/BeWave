@@ -1,17 +1,51 @@
-# BE WAVE — MQTT and legacy TCP
+# BE WAVE — MQTT switches and legacy TCP
 
-Version **0.6.0** adds automatic MQTT device discovery directly inside the BE WAVE integration. No virtual IP devices are needed for supported physical-device telemetry and on/off control. Uses Home Assistant’s existing MQTT connection and groups devices as children of a BE WAVE hub. Requires Home Assistant 2026.10.0 or newer.
+Version **0.10.0** discovers native switches and functional detectors under a BE WAVE hub, including motion, magnetic contacts, vibration, smoke and other reported detections. Diagnostic entities are not created. Requires Home Assistant 2026.10.0 or newer.
 
-**[Nederlandse installatiehandleiding, schakelen en IP-adres wijzigen](README-MQTT-NL.md)**
+**[Nederlandse installatiehandleiding](README-MQTT-NL.md)** · **[Release notes](RELEASE-NOTES-0.10.0.md)**
 
-1. Copy `custom_components/bewave` to your Home Assistant configuration and restart.
+1. Replace `custom_components/bewave` and restart Home Assistant.
 2. Configure Home Assistant’s MQTT integration.
-3. Add **BE WAVE → MQTT**. Enter base topic `bewave` for messages on `bewave/devices/16/tx`.
-4. Devices and supported fields appear when telemetry arrives.
+3. Add **BE WAVE → MQTT**. Use the status base matching BE WAVE Publish topic and command base matching Subscribe topic; for example `bewave` and `bewave/command`.
+4. Switches and functional detectors are added without battery, signal, firmware or error-counter entities.
 
-MQTT supports temperature, battery, contacts, detection and other statuses, plus on/off control for components reporting `on_off`. Set the command base topic to match BE WAVE’s Subscribe topic, for example `bewave/command`. State changes follow actual status feedback. Alarm-group commands and dimmer brightness are not included. Existing TCP installations are preserved. TCP hub addresses can be changed through **Configure → Hub IP-adres wijzigen** or **Reconfigure**, without changing entity IDs. Change the MQTT broker IP through the MQTT integration’s own Reconfigure action.
+Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. Obsolete measurement/diagnostic entities are cleaned up only for this integration’s MQTT entry, preserving functional detectors.
 
-See [the changelog](CHANGELOG.md) and [test suite](tests/). Automated tests run with Home Assistant, including a round-trip test through a real local MQTT broker and simulated BE WAVE device. A live hardware test is still required.
+See [the changelog](CHANGELOG.md), [protocol scope](PROTOCOL.md) and [tests](tests/). A real local MQTT test includes switching after a simulated day without status updates. Physical BE WAVE hardware is not controlled by the tests.
+
+## Language and activity
+
+Open **Configure → Taal / Language** and choose Home Assistant (system language),
+Nederlands or English. This changes generated function names, the discovery button
+and explicit menu/action choices in place. Custom device names, user-renamed entities
+and entity IDs are preserved. Form titles/descriptions and state labels follow the
+Home Assistant user's profile language; choose English in that profile for the full UI.
+
+Saving MQTT display/command settings no longer reloads the integration or discards
+live states. Short status updates with a serial but no channel use the known topic's
+channel, preventing accidental channel-zero duplicates. Identical incoming readings
+do not cause additional state changes; quiet detectors do not expire on inactivity.
+A real MQTT disconnect still makes entities unavailable. On reconnect, fresh status
+is required so old clear readings are never presented as current detection states.
+
+If motion still does not register, collect the detector's exact MQTT topic and two
+payloads (idle and during movement) from the MQTT listener. A screenshot of Activity
+alone cannot establish whether the hub published a detection, a different field or
+no message. Do not substitute generic alarm/tamper fields for motion without evidence.
+Activity/history is managed by Home Assistant's recorder, separately from this
+integration's small optional error log and cache.
+
+## Storage and retention
+
+**Configure → Storage, log and retention** shows measured own-cache and own-log sizes in MB/GB. Small device metadata caching is enabled by default; the optional own warning/error log is disabled. Choose retention (default 30 days) and a maximum own log size (default 5 MB), or clear the cache/log. Oldest log entries are discarded first; automatic pruning runs at setup and hourly. Removed-device exclusions are preserved, and clearing storage does not reload or delete live controls.
+
+Only this connection’s own cache/log is managed. Local Home Assistant log-file sizes may be displayed read-only, but system journals and the shared history database are not cleared or constrained. No journal size is invented where it is unavailable.
+
+## Device management
+
+The MQTT options menu now includes **Search for new devices**, **Remove a device**, and **Restore a removed device**, alongside MQTT settings. The parent BE WAVE device also has a search button. Search requests `SYNC`; new supported devices appear when the hub publishes telemetry.
+
+Individual devices can be deleted from Home Assistant’s device page. Removal persists in this connection’s cache and is not reversed by normal telemetry, restart or a search. Restore is an explicit per-device action. The physical BE WAVE configuration is not modified. Duplicate names are distinguished by model and identity in the selection menu. Legacy TCP device records can also be removed, including inactive orphan records.
 
 ## Legacy TCP configuration
 

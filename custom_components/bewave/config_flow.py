@@ -14,6 +14,7 @@ from .const import (
     CONF_COMMAND_PREFIX,
     CONF_DEVICES,
     CONF_KEEP_LOG,
+    CONF_LANGUAGE,
     CONF_LISTEN_PORT,
     CONF_MAX_LOG_MB,
     CONF_OFF_MESSAGE,
@@ -29,6 +30,7 @@ from .const import (
     DOMAIN,
     TRANSPORT_MQTT,
 )
+from .language import display_language
 from .models import devices_to_storage_dicts, normalize_device
 from .mqtt_models import normalize_prefix
 
@@ -369,8 +371,9 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
         """Expose device management separately from connection settings."""
         from .device_management import async_ignored_devices
 
-        nl = self.hass.config.language.startswith("nl")
+        nl = display_language(self.hass, self.config_entry.options) == "nl"
         choices = {
+            "language": "Taal / Language",
             "mqtt": "MQTT-instellingen" if nl else "MQTT settings",
             "search": "Zoeken naar nieuwe apparaten"
             if nl
@@ -385,6 +388,31 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
                 "Verwijderd apparaat herstellen" if nl else "Restore a removed device"
             )
         return self.async_show_menu(step_id="mqtt_menu", menu_options=choices)
+
+    async def async_step_language(self, user_input=None):
+        """Choose function/menu names without restarting live MQTT entities."""
+        if user_input is not None:
+            options = {**self.config_entry.options, **user_input}
+            self.hass.config_entries.async_update_entry(
+                self.config_entry, options=options
+            )
+            if hub := self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id):
+                hub.display_options = dict(options)
+                hub._notify()
+            return self.async_abort(reason="language_saved")
+        return self.async_show_form(
+            step_id="language",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_LANGUAGE,
+                        default=self.config_entry.options.get(CONF_LANGUAGE, "auto"),
+                    ): vol.In(
+                        {"auto": "Home Assistant", "nl": "Nederlands", "en": "English"}
+                    )
+                }
+            ),
+        )
 
     async def async_step_storage(self, user_input=None):
         """Display scoped file sizes and manage bounded optional storage."""
@@ -410,7 +438,7 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             await hub._prune_storage()
         report = await async_storage_report(self.hass, self.config_entry.entry_id)
         defaults = storage_options(self.config_entry.options)
-        nl = self.hass.config.language.startswith("nl")
+        nl = display_language(self.hass, self.config_entry.options) == "nl"
         if report["ha_log_bytes"] is None:
             report["ha_log"] = (
                 "Niet uitleesbaar (geen lokaal logbestand)"
@@ -536,9 +564,24 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             except ValueError:
                 errors[CONF_COMMAND_PREFIX] = "invalid_topic_prefix"
             else:
-                return self.async_create_entry(
-                    title="", data={**self.config_entry.options, **user_input}
+                # Display/command settings need no unsubscribe or entity reload.
+                options = {**self.config_entry.options, **user_input}
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, options=options
                 )
+                if hub := self.hass.data.get(DOMAIN, {}).get(
+                    self.config_entry.entry_id
+                ):
+                    from homeassistant.helpers import device_registry as dr
+
+                    hub.name = user_input["name"]
+                    hub.command_prefix = user_input[CONF_COMMAND_PREFIX]
+                    if hub.hub_device_id:
+                        dr.async_get(self.hass).async_update_device(
+                            hub.hub_device_id, name=hub.name
+                        )
+                    hub._notify()
+                return self.async_abort(reason="mqtt_saved")
         defaults = {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
             step_id="mqtt",

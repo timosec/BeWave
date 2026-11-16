@@ -7,6 +7,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import Entity, EntityCategory
 
 from .const import DOMAIN
+from .language import function_name
 from .mqtt_hub import BeWaveMqttHub
 from .mqtt_models import Field, MqttDevice
 
@@ -21,12 +22,15 @@ class BeWaveMqttEntity(Entity):
         self.hub = hub
         self.device = device
         self.field = field
-        self._attr_name = field.name
         self._attr_unique_id = f"mqtt_{hub.entry_id}_{device.identity}_{field.key}"
         if field.device_class:
             self._attr_device_class = field.device_class
         if field.diagnostic:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    @property
+    def name(self):
+        return function_name(self.hub.hass, self.hub.display_options, self.field.name)
 
     @property
     def device_info(self) -> dr.ChildDeviceInfo:

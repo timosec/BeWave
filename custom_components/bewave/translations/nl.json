@@ -134,7 +134,8 @@
           "search": "Zoeken naar nieuwe apparaten",
           "remove_mqtt_device": "Apparaat verwijderen",
           "restore_mqtt_device": "Verwijderd apparaat herstellen",
-          "storage": "Opslag, log en bewaartermijn"
+          "storage": "Opslag, log en bewaartermijn",
+          "language": "Taal / Language"
         }
       },
       "search": {
@@ -165,6 +166,13 @@
           "max_log_mb": "Maximale grootte eigen foutlog (MB)",
           "action": "Actie"
         }
+      },
+      "language": {
+        "title": "Taal / Language",
+        "description": "Kies Nederlands of Engels voor functienamen, de zoekknop en menukeuzes. Eigen apparaatnamen en entiteit-ID’s blijven behouden. Formuliertitels en statusteksten zoals “Gedetecteerd” volgen de taal van het Home Assistant-profiel. De verbinding wordt niet herstart.",
+        "data": {
+          "language": "Taal / Language"
+        }
       }
     },
     "error": {
@@ -185,7 +193,9 @@
       "storage_saved": "Opslaginstellingen opgeslagen. Nieuwe grenzen zijn direct toegepast.",
       "cache_cleared": "Apparaatcache gewist. Apparaten en uitsluitingen blijven behouden.",
       "log_cleared": "Eigen BE WAVE-log gewist.",
-      "storage_cleared": "Apparaatcache en eigen BE WAVE-log gewist. Apparaten en uitsluitingen blijven behouden."
+      "storage_cleared": "Apparaatcache en eigen BE WAVE-log gewist. Apparaten en uitsluitingen blijven behouden.",
+      "language_saved": "Taal opgeslagen. De verbinding blijft actief.",
+      "mqtt_saved": "MQTT-instellingen opgeslagen. De verbinding blijft actief."
     }
   }
 }

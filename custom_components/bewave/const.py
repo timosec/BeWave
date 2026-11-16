@@ -1,6 +1,7 @@
 """Constants for the BeWave integration."""
 
 DOMAIN = "bewave"
+CONF_LANGUAGE = "language"
 CONF_TRANSPORT = "transport"
 CONF_TOPIC_PREFIX = "topic_prefix"
 CONF_COMMAND_PREFIX = "command_prefix"
