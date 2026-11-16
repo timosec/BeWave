@@ -91,15 +91,15 @@ The integration still uses raw TCP under the hood, matching the original Homebri
 
 ## Setup
 
-<img width="730" height="383" alt="image" src="https://github.com/user-attachments/assets/42205247-fa12-4075-97ed-ee1e62825e04" />
+<img width="365" height="224" alt="image" src="https://github.com/user-attachments/assets/42205247-fa12-4075-97ed-ee1e62825e04" />
 
 Enter the IP address of the Hub.
 
-<img width="733" height="385" alt="image" src="https://github.com/user-attachments/assets/d00784ef-0e9c-478b-82b7-75d6c91cbc77" />
+<img width="366" height="192" alt="image" src="https://github.com/user-attachments/assets/d00784ef-0e9c-478b-82b7-75d6c91cbc77" />
 
 First, configure the first zone:
 
-<img width="729" height="985" alt="image" src="https://github.com/user-attachments/assets/5caddc44-c569-4e26-83be-69fce4cffa56" />
+<img width="364" height="492" alt="image" src="https://github.com/user-attachments/assets/5caddc44-c569-4e26-83be-69fce4cffa56" />
 
 1: Zone name</br>
 2: Command to send to the Bewave hub</br>
