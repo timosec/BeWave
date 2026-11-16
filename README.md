@@ -6,8 +6,9 @@ Version **0.10.0** discovers native switches and functional detectors under a BE
 
 1. Replace `custom_components/bewave` and restart Home Assistant.
 2. Configure Home Assistant’s MQTT integration.
-3. Add **BE WAVE → MQTT**. Use the status base matching BE WAVE Publish topic and command base matching Subscribe topic; for example `bewave` and `bewave/command`.
-4. Switches and functional detectors are added without battery, signal, firmware or error-counter entities.
+3. Create a bewave user in the MQTT app. **settings → Apps → Mosquitto broker → Config → Logins**
+4. Add **BE WAVE → MQTT**. Use the status base matching BE WAVE Publish topic and command base matching Subscribe topic; for example `bewave` and `bewave/command`.
+5. Switches and functional detectors are added without battery, signal, firmware or error-counter entities.
 
 Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. Obsolete measurement/diagnostic entities are cleaned up only for this integration’s MQTT entry, preserving functional detectors.
 
