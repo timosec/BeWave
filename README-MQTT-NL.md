@@ -1,22 +1,116 @@
-# BE WAVE via MQTT — versie 0.7.0
+# BE WAVE via MQTT — versie 0.9.0
 
-Deze Home Assistant-integratie voegt alleen schakelbare BE WAVE-componenten toe.
-Eén BE WAVE-hoofdapparaat bevat aparte subapparaten, met per apparaat één
-**Schakelaar**. Er zijn geen virtuele IP-apparaten nodig voor ondersteunde
-fysieke uitgangen.
+Deze Home Assistant-integratie voegt schakelaars en functionele melders toe.
+Eén BE WAVE-hoofdapparaat bevat aparte subapparaten. Per apparaat verschijnen
+alleen de bedieningen en detecties die het apparaat meldt. Er zijn geen virtuele
+IP-apparaten nodig voor ondersteunde fysieke componenten.
 
 Dit is een custom integration voor Home Assistant, geen afzonderlijk Supervisor-add-onproces.
 
+## Opslag, loggrootte en bewaartermijn
+
+Open **BE WAVE → Configureren → Opslag, log en bewaartermijn**. Het scherm toont
+het echte bestandsgebruik in MB en GB en biedt deze instellingen:
+
+| Instelling | Standaard | Betekenis |
+| --- | --- | --- |
+| Apparaatcache op schijf bewaren | Aan | Alleen kleine apparaatmetadata, geen meetgeschiedenis |
+| Eigen foutlog bewaren | Uit | Optioneel waarschuwingen en fouten van deze MQTT-koppeling bewaren |
+| Bewaartermijn | 30 dagen | Oudere cachemetadata en eigen logmeldingen opruimen |
+| Maximale grootte eigen foutlog | 5 MB | Bij bereiken van de limiet vervallen de oudste logmeldingen eerst |
+
+De termijn is instelbaar van 1 tot 3650 dagen; de loglimiet van 1 tot 100 MB.
+Nieuwe grenzen worden bij opslaan direct toegepast. Automatisch opruimen gebeurt
+ook bij opstarten en ieder uur. De bewaartermijn is een aantal dagen; 30 dagen
+is dus geen exacte kalendermaand.
+
+De acties zijn **Instellingen opslaan**, **Apparaatcache wissen**, **Eigen BE WAVE-log wissen**
+en **Apparaatcache en eigen log wissen**. Wissen laat de live bediening en apparaat-
+registratie intact. Bewust verwijderde apparaten blijven uitgesloten: die lijst
+is een instelling, geen tijdelijk logboek, en verloopt niet automatisch.
+
+### Wat wordt bewaard?
+
+De apparaatcache bevat alleen naam, identificatie, type, MQTT-topic, beschikbare
+functienamen en een tijdstip voor de bewaartermijn. Actuele standen en normale
+MQTT-payloads worden niet als een geschiedenis opgeslagen. De cache mag volledig
+worden uitgezet; na een herstart worden de functies dan opnieuw aangemaakt bij
+nieuwe berichten van de hub. De uitsluitingen blijven bewaard.
+
+De eigen foutlog staat standaard uit en bewaart, als hij wordt aangezet, alleen
+verbindingwaarschuwingen en verzendfouten. Normale statusberichten, debugregels
+en routine-schakelacties worden niet in deze eigen log opgeslagen. De bestaande
+TCP-koppeling schrijft routineberichten voortaan alleen op debugniveau en
+herhaalde onbekende feedbackwaarschuwingen maximaal eenmaal per vijf minuten.
+
+De cache staat in `/config/.storage/bewave.mqtt.<entry_id>` en de optionele eigen
+log in `/config/.storage/bewave.log.<entry_id>` bij een standaardinstallatie.
+Cache wissen laat het kleine bestand met uitsluitingen bestaan. Als cachebewaring
+aan blijft staan, kan nieuwe apparaatmetadata later weer een cache opbouwen.
+
+### Welke loggrootte is zichtbaar?
+
+Het overzicht toont de eigen apparaatcache en foutlog. Daarnaast kan het de
+som van lokale `home-assistant.log*`-bestanden in de configuratiemap tonen,
+**uitsluitend ter informatie**. Op Home Assistant OS staan logs normaal in het
+systeemjournaal; de integratie kan de grootte daarvan niet betrouwbaar uitlezen
+en toont dan dat de grootte niet beschikbaar is, geen verzonnen 0 MB.
+
+Deze instellingen wissen of begrenzen geen Home Assistant-systeemlogs, Docker-
+logs, systeemjournaal, back-ups of recorder/historiedatabase. Ze gelden alleen
+voor de eigen cache en optionele foutlog van deze BE WAVE MQTT-koppeling.
+
+## Apparaten verwijderen en nieuwe apparaten zoeken
+
+Ga bij de BE WAVE MQTT-koppeling naar **Configureren**:
+
+| Optie | Werking |
+| --- | --- |
+| MQTT-instellingen | Naam en commando-basistopic wijzigen |
+| Zoeken naar nieuwe apparaten | Een synchronisatie aanvragen bij BE WAVE |
+| Apparaat verwijderen | Een gekozen apparaat uit deze Home Assistant-koppeling verwijderen |
+| Verwijderd apparaat herstellen | Een eerder verwijderd apparaat opnieuw toelaten |
+
+Op het hoofdapparaat **BE WAVE** staat ook de knop **Zoeken naar nieuwe apparaten**.
+Deze verstuurt alleen een synchronisatieverzoek; uitgangen worden niet geschakeld.
+Nieuwe ondersteunde apparaten verschijnen zodra de hub hun MQTT-status verstuurt.
+Zoeken is dus geen IP-netwerkscan en kan geen status afdwingen als de hub niet antwoordt.
+
+Een individueel apparaat kan ook via de eigen apparaatpagina worden verwijderd.
+De nieuwe versie staat de verwijderactie van Home Assistant toe, ook voor een oude,
+inactieve vermelding. Bij twee gelijke namen toont het keuzemenu ook het type en de
+identificatie, zodat de juiste oude vermelding geselecteerd kan worden.
+
+Een verwijdering geldt voor deze Home Assistant-koppeling. Het apparaat wordt niet
+uit de fysieke BE WAVE-installatie gewist. De koppeling onthoudt de verwijdering,
+ook na een herstart: binnenkomende MQTT-berichten of opnieuw zoeken voegen dat
+apparaat niet meteen weer toe. Met **Verwijderd apparaat herstellen** kan het later
+weer worden toegelaten. Daarna verschijnt het bij een nieuw statusbericht.
+
+Bestaande TCP-zoneapparaten kunnen eveneens via hun apparaatpagina worden
+verwijderd. Automatisch zoeken is beschikbaar voor de MQTT-koppeling.
+
 ## Wat wordt toegevoegd?
 
-Alleen componenten die een `on_off`-veld melden worden herkend als schakelbaar.
-Apparaten zonder dat veld worden overgeslagen. De integratie voegt geen
-meet-, status- of diagnose-entiteiten toe voor temperatuur, batterij, signaal,
-firmware, contacten, detectie of alarmstatus. BE WAVE kan zulke gegevens nog in
-zijn JSON-berichten opnemen; de integratie slaat ze over en bewaart ze niet.
+| Functie | MQTT-veld |
+| --- | --- |
+| Aan/uit-schakelaar | `on_off` |
+| Beweging | `motion`, of `violation` bij bekende bewegingsmelders |
+| Magneetcontact | `magnetic` |
+| Trilling | `vibration` |
+| Rook | `smoke`, of `violation` bij ASD-melders |
+| Gas / koolmonoxide | `gas`, met koolmonoxideklasse bij ACMD-melders |
+| Waterdetectie | `flood` |
+| Glasbreuk | `glass_break` |
+| Algemene detectie | `violation` wanneer geen specifiek detectieveld beschikbaar is |
 
-Bij meerdere kanalen krijgt ieder schakelbaar kanaal zijn eigen subapparaat.
-De naam komt uit BE WAVE. Een eigen naam in Home Assistant blijft behouden.
+Batterij-, signaal-, firmware-, fout- en andere diagnosegegevens worden niet als
+entiteiten toegevoegd of in de apparaatcache opgeslagen. MQTT kan deze velden
+nog in de berichten bevatten; de integratie negeert ze.
+
+Bij meerdere kanalen krijgt ieder kanaal zijn eigen subapparaat. Een apparaat
+met bijvoorbeeld zowel beweging als een schakelbare verlichting kan beide
+functies tonen. De naam komt uit BE WAVE; een eigen Home Assistant-naam blijft behouden.
 
 ## Installeren of bijwerken
 
@@ -26,7 +120,7 @@ in Home Assistant en een BE WAVE-versie met MQTT-ondersteuning.
 1. Maak een kopie van de bestaande map `config/custom_components/bewave`.
 2. Vervang de volledige map door `custom_components/bewave` uit de ZIP.
 3. Herstart Home Assistant. Een bestaande BE WAVE-configuratie hoeft niet verwijderd te worden.
-4. Alleen bij een nieuwe installatie: kies **Integratie toevoegen → BE WAVE → MQTT — automatisch schakelaars toevoegen**.
+4. Alleen bij een nieuwe installatie: kies **Integratie toevoegen → BE WAVE → MQTT — apparaten en melders toevoegen**.
 5. Gebruik deze instellingen, of de overeenkomstige waarden van de eigen installatie:
 
 | Instelling | BE WAVE-app | Home Assistant BE WAVE-integratie |
@@ -60,14 +154,9 @@ opdracht succesvol naar de broker is gepubliceerd.
 
 ## Minder entiteiten bij bijwerken
 
-Bij het starten van versie 0.7.0 worden de sensor- en binaire-sensorentiteiten
-opgeruimd die eerdere MQTT-versies van deze BE WAVE-integratie zelf aanmaakten.
-Lege subapparaten worden daarbij verwijderd. Bestaande schakelaars behouden hun
-entiteits-ID's. De oude meetvelden worden ook uit de eigen apparaatcache gefilterd.
-
-De opruiming raakt alleen entiteiten die bij deze MQTT-configuratie en de eigen
-gegenereerde identificaties horen. Andere MQTT-integraties en de bestaande
-TCP-koppeling worden niet opgeschoond.
+Overbodige meet- en diagnose-entiteiten van eerdere MQTT-versies worden
+opgeruimd. Functionele melders en schakelaars blijven behouden. Deze opruiming
+raakt alleen eigen gegenereerde entiteiten van de betreffende MQTT-koppeling.
 
 ## IP-adres wijzigen
 
@@ -90,7 +179,7 @@ Opdrachten gebruiken QoS 0 en retain uit. Er wordt niet opnieuw geprobeerd of
 opgeslagen voor later. Verzenden heeft een time-out van vijf seconden. Dat is
 alleen een verzendlimiet, geen vervaltijd van de schakelaar.
 
-Deze versie voegt alleen aan/uit toe. Helderheidsregeling, thermostaatbediening,
+Deze versie biedt aan/uit-bediening en functionele detectiestatussen. Helderheidsregeling, thermostaatbediening,
 scènes en het in-/uitschakelen van alarmgroepen worden niet aangeboden.
 De commandostructuur is vergeleken met een bestaande community-implementatie;
 zie [PROTOCOL.md](PROTOCOL.md).
@@ -99,8 +188,7 @@ zie [PROTOCOL.md](PROTOCOL.md).
 
 De tests gebruiken Home Assistant 2026.10.4, met onder andere een echte lokale
 MQTT-broker en een gesimuleerd BE WAVE-apparaat. Er wordt gecontroleerd dat een
-schakelaar na een lange periode zonder updates nog kan schakelen, dat alleen
-schakelaars worden aangemaakt en dat oude diagnose-entiteiten worden opgeruimd.
+schakelaar na een lange periode zonder updates nog kan schakelen, dat schakelaars en functionele melders worden aangemaakt zonder diagnosegegevens en dat oude diagnose-entiteiten worden opgeruimd.
 Ook configuratie, Nederlands/Engels, herladen, reconnect en IP-wijzigingen worden getest.
 
 Een praktijktest met de eigen BE WAVE-hub blijft nodig.
