@@ -107,12 +107,12 @@ First, configure the first zone:
 5: Status (OFF) – used to receive the OFF state from the Bewave hub
 
 
-<img width="730" height="449" alt="image" src="https://github.com/user-attachments/assets/1e29a376-2fb0-4ee3-9797-db2ac4e5dcb0" />
+<img width="365" height="224" alt="image" src="https://github.com/user-attachments/assets/1e29a376-2fb0-4ee3-9797-db2ac4e5dcb0" />
 
 1: To add an new zone </br>
 2: to save the zone
 
 ## Settings in the BeWave Hub: 
 
-<img width="600" height="1203" alt="image" src="https://github.com/user-attachments/assets/d023a499-7045-416a-a7fd-33854acb9042" />
+<img width="300" height="602" alt="image" src="https://github.com/user-attachments/assets/d023a499-7045-416a-a7fd-33854acb9042" />
 
