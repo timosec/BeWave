@@ -1,5 +1,3 @@
-<img width="1205" height="4365" alt="image" src="https://github.com/user-attachments/assets/27769f1c-db83-42e6-be79-e40d42491141" /># BE WAVE — MQTT switches and legacy TCP
-
 Version **0.10.0** discovers native switches and functional detectors under a BE WAVE hub, including motion, magnetic contacts, vibration, smoke and other reported detections. Diagnostic entities are not created. Requires Home Assistant 2026.10.0 or newer.
 
 **[Nederlandse installatiehandleiding](README-MQTT-NL.md)** · **[Release notes](RELEASE-NOTES-0.10.0.md)**
