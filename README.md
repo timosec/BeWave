@@ -9,6 +9,8 @@ Version **0.10.0** discovers native switches and functional detectors under a BE
 3. Add **BE WAVE → MQTT**. Use the status base matching BE WAVE Publish topic and command base matching Subscribe topic; for example `bewave` and `bewave/command`.
 4. Switches and functional detectors are added without battery, signal, firmware or error-counter entities.
 
+![BeWave APP](image.png)
+
 Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. Obsolete measurement/diagnostic entities are cleaned up only for this integration’s MQTT entry, preserving functional detectors.
 
 See [the changelog](CHANGELOG.md), [protocol scope](PROTOCOL.md) and [tests](tests/). A real local MQTT test includes switching after a simulated day without status updates. Physical BE WAVE hardware is not controlled by the tests.
