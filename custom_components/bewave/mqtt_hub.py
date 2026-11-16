@@ -6,15 +6,16 @@ import asyncio
 import json
 import logging
 from collections.abc import Callable
+from datetime import timedelta
 from time import monotonic
 
 from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.event import async_call_later, async_track_time_interval
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN
+from .const import CONF_REMEMBER_DEVICES, CONF_RETENTION_DAYS, DOMAIN
 from .mqtt_models import (
     FIELD_BY_KEY,
     MqttDevice,
@@ -22,6 +23,7 @@ from .mqtt_models import (
     decode_message,
     device_identity,
 )
+from .storage_management import BeWaveLog, recent_device_snapshots, storage_options
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,12 +38,19 @@ class BeWaveMqttHub:
         prefix: str,
         name: str,
         command_prefix: str,
+        options=None,
     ) -> None:
         self.hass = hass
         self.entry_id = entry_id
         self.prefix = prefix
         self.name = name
         self.command_prefix = command_prefix
+        preferences = storage_options(options or {})
+        self.remember_devices = preferences[CONF_REMEMBER_DEVICES]
+        self.retention_days = preferences[CONF_RETENTION_DAYS]
+        self.log = BeWaveLog(hass, entry_id, preferences)
+        self._cache_cleared = False
+        self._saved_signature = ""
         self.devices: dict[str, MqttDevice] = {}
         self.ignored: dict[str, dict[str, str]] = {}
         self.connected = False
@@ -58,6 +67,7 @@ class BeWaveMqttHub:
 
     async def async_load(self) -> None:
         """Restore entity metadata before setting up platforms."""
+        await self.log.async_load()
         stored = await self._store.async_load()
         if not isinstance(stored, dict):
             return
@@ -68,7 +78,13 @@ class BeWaveMqttHub:
                 for key, value in ignored.items()
                 if isinstance(key, str) and isinstance(value, dict)
             }
-        for raw in stored.get("devices", []):
+        self._saved_signature = json.dumps(stored, sort_keys=True)
+        records = (
+            recent_device_snapshots(stored.get("devices", []), self.retention_days)
+            if self.remember_devices
+            else []
+        )
+        for raw in records:
             try:
                 device = MqttDevice.restore(raw)
                 decode_message(device.topic, {}, self.prefix)
@@ -80,6 +96,10 @@ class BeWaveMqttHub:
                 continue
             self.devices[device.identity] = device
             self._routes[device.topic] = device.identity
+        if stored.get("devices") and (
+            not self.remember_devices or len(records) != len(stored["devices"])
+        ):
+            await self._store.async_save(self._store_data())
 
     async def async_start(self) -> None:
         """Subscribe after all platforms have installed discovery listeners."""
@@ -93,6 +113,11 @@ class BeWaveMqttHub:
             )
         )
         self._schedule_sync()
+        self._unsubs.append(
+            async_track_time_interval(
+                self.hass, self._prune_storage, timedelta(hours=1)
+            )
+        )
 
     async def async_stop(self) -> None:
         """Remove subscriptions/timers and flush discovery metadata."""
@@ -104,7 +129,8 @@ class BeWaveMqttHub:
             self._cancel_sync = None
         self.connected = False
         self._listeners.clear()
-        await self._store.async_save(self._snapshot())
+        await self._store.async_save(self._store_data())
+        await self.log.async_flush()
 
     @callback
     def subscribe(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -120,6 +146,7 @@ class BeWaveMqttHub:
     def _connection_changed(self, connected: bool) -> None:
         self.connected = connected
         if not connected:
+            self.log.add("warning", "MQTT-verbinding verbroken")
             # Do not revive cached alarm/contact states on broker reconnect.
             for device in self.devices.values():
                 device.updated.clear()
@@ -149,11 +176,17 @@ class BeWaveMqttHub:
         try:
             await self.async_request_discovery()
         except (HomeAssistantError, TimeoutError):
+            self.log.add(
+                "warning", "Automatische synchronisatie kon niet worden verstuurd"
+            )
             _LOGGER.debug("BE WAVE status sync could not be sent")
 
     async def async_request_discovery(self) -> None:
         """Ask for a fresh device inventory/status; never operate outputs."""
         if not self.connected or not mqtt.is_connected(self.hass):
+            self.log.add(
+                "warning", "Zoekopdracht niet verstuurd: MQTT is niet verbonden"
+            )
             raise HomeAssistantError(
                 "BE WAVE: MQTT is niet verbonden. Controleer de MQTT-integratie."
             )
@@ -167,9 +200,13 @@ class BeWaveMqttHub:
                     retain=False,
                 )
         except TimeoutError as err:
+            self.log.add("error", "Time-out bij aanvragen van synchronisatie")
             raise HomeAssistantError(
                 "BE WAVE: de zoekopdracht kon niet tijdig worden verstuurd"
             ) from err
+        except HomeAssistantError:
+            self.log.add("error", "MQTT kon de synchronisatie-aanvraag niet versturen")
+            raise
 
     async def async_forget(
         self, identity: str, name: str = "", model: str = ""
@@ -184,13 +221,13 @@ class BeWaveMqttHub:
         self._routes = {
             route: key for route, key in self._routes.items() if key != identity
         }
-        await self._store.async_save(self._snapshot())
+        await self._store.async_save(self._store_data())
         self._notify()
 
     async def async_restore(self, identity: str) -> None:
         """Allow an explicitly selected previously removed device again."""
         self.ignored.pop(identity, None)
-        await self._store.async_save(self._snapshot())
+        await self._store.async_save(self._store_data())
 
     @callback
     def _receive(self, message: mqtt.ReceiveMessage) -> None:
@@ -237,8 +274,16 @@ class BeWaveMqttHub:
         device.update(
             payload, None if getattr(message, "retain", False) else monotonic()
         )
-        if device.snapshot() != before:
-            self._store.async_delay_save(self._snapshot, 10)
+        after = device.snapshot()
+        metadata_changed = {k: v for k, v in after.items() if k != "last_seen"} != {
+            k: v for k, v in before.items() if k != "last_seen"
+        }
+        hour_changed = int(after["last_seen"] // 3600) != int(
+            before["last_seen"] // 3600
+        )
+        if self.remember_devices and (metadata_changed or hour_changed):
+            self._cache_cleared = False
+            self._store.async_delay_save(self._store_data, 10)
         self._notify()
 
     def field_available(self, device: MqttDevice, key: str) -> bool:
@@ -258,6 +303,10 @@ class BeWaveMqttHub:
             or not mqtt.is_connected(self.hass)
             or self._routes.get(device.topic) != device.identity
         ):
+            self.log.add(
+                "warning",
+                "Schakelopdracht niet verstuurd: geen geldige verbinding of actuele apparaatstatus",
+            )
             raise HomeAssistantError(
                 "BE WAVE: geen actuele verbinding/status voor dit apparaat"
             )
@@ -274,15 +323,48 @@ class BeWaveMqttHub:
                     retain=False,
                 )
         except TimeoutError as err:
+            self.log.add("error", "Time-out bij versturen van een schakelopdracht")
             raise HomeAssistantError(
                 "BE WAVE: MQTT-opdracht verzenden duurde te lang"
             ) from err
+        except HomeAssistantError:
+            self.log.add("error", "MQTT kon de schakelopdracht niet versturen")
+            raise
         # The received status remains authoritative. A successful publish is not
         # proof that the physical device executed the command.
 
     @callback
     def _snapshot(self) -> dict:
         return {
-            "devices": [device.snapshot() for device in self.devices.values()],
+            "devices": recent_device_snapshots(
+                [device.snapshot() for device in self.devices.values()],
+                self.retention_days,
+            )
+            if self.remember_devices and not self._cache_cleared
+            else [],
             "ignored": self.ignored,
         }
+
+    @callback
+    def _store_data(self):
+        snapshot = self._snapshot()
+        self._saved_signature = json.dumps(snapshot, sort_keys=True)
+        return snapshot
+
+    async def _prune_storage(self, _now=None):
+        await self.log.async_prune()
+        snapshot = self._snapshot()
+        if json.dumps(snapshot, sort_keys=True) != self._saved_signature:
+            await self._store.async_save(self._store_data())
+
+    async def async_configure_storage(self, options):
+        preferences = storage_options(options)
+        self.remember_devices = preferences[CONF_REMEMBER_DEVICES]
+        self.retention_days = preferences[CONF_RETENTION_DAYS]
+        self.log.configure(preferences)
+        await self._prune_storage()
+
+    async def async_clear_cache(self):
+        """Clear disk metadata, retaining live operation and intentional exclusions."""
+        self._cache_cleared = True
+        await self._store.async_save(self._store_data())

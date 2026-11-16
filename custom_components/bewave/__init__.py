@@ -119,6 +119,7 @@ async def _async_setup_mqtt_entry(
                 CONF_COMMAND_PREFIX, f"{entry.data[CONF_TOPIC_PREFIX]}/command"
             ),
         ),
+        entry.options,
     )
     await hub.async_load()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = hub

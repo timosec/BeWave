@@ -27,6 +27,7 @@ class BeWaveHub:
         self.hass = hass
         self.host = host
         self.identity_host = host
+        self._last_unknown_warning = None
         self.devices = devices
         self._servers: dict[int, asyncio.base_events.Server] = {}
         self._listeners: dict[str, list[Callable[[bool], None]]] = defaultdict(list)
@@ -60,7 +61,7 @@ class BeWaveHub:
                 self._handle_client, host="0.0.0.0", port=port
             )
             self._servers[port] = server
-            _LOGGER.info("BeWave luistert op TCP poort %s voor feedback", port)
+            _LOGGER.debug("BeWave luistert op TCP poort %s voor feedback", port)
 
     async def async_stop(self) -> None:
         """Stop listeners."""
@@ -92,8 +93,8 @@ class BeWaveHub:
         - keep the socket open briefly after the write
         """
         payload = f"{command}\r\n".encode()
-        _LOGGER.info("BeWave connecteer naar %s:%s", self.host, DEFAULT_TARGET_PORT)
-        _LOGGER.info(
+        _LOGGER.debug("BeWave connecteer naar %s:%s", self.host, DEFAULT_TARGET_PORT)
+        _LOGGER.debug(
             "BeWave verzendt naar %s:%s -> %s", self.host, DEFAULT_TARGET_PORT, command
         )
         try:
@@ -103,7 +104,7 @@ class BeWaveHub:
                 "BeWave verzenden mislukt naar %s:%s", self.host, DEFAULT_TARGET_PORT
             )
             raise
-        _LOGGER.info(
+        _LOGGER.debug(
             "BeWave verzenden voltooid naar %s:%s", self.host, DEFAULT_TARGET_PORT
         )
 
@@ -134,7 +135,7 @@ class BeWaveHub:
                     break
                 message = data.decode("utf-8").strip()
                 if message:
-                    _LOGGER.info("BeWave feedback op poort %s -> %s", port, message)
+                    _LOGGER.debug("BeWave feedback op poort %s -> %s", port, message)
                     self._dispatch_feedback(port, message)
         finally:
             writer.close()
@@ -144,14 +145,22 @@ class BeWaveHub:
         """Dispatch feedback message to subscribers."""
         device = self._device_by_message_port.get((port, message))
         if device is None:
-            _LOGGER.warning(
-                "Geen BeWave device match voor bericht %s op poort %s", message, port
-            )
+            now = time.monotonic()
+            if (
+                self._last_unknown_warning is None
+                or now - self._last_unknown_warning >= 300
+            ):
+                _LOGGER.warning(
+                    "Onbekende BeWave TCP-feedback op poort %s (maximaal eens per 5 minuten)",
+                    port,
+                )
+                self._last_unknown_warning = now
+            _LOGGER.debug("Onbekende BeWave feedback: %s", message)
             return
 
         new_state = message == device.on_message
         self._state_by_device_id[device.id] = new_state
-        _LOGGER.info(
+        _LOGGER.debug(
             "BeWave statusupdate %s -> %s", device.name, "AAN" if new_state else "UIT"
         )
         for callback in list(self._listeners[device.id]):

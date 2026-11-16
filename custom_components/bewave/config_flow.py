@@ -13,12 +13,18 @@ from .const import (
     CONF_COMMAND_ON,
     CONF_COMMAND_PREFIX,
     CONF_DEVICES,
+    CONF_KEEP_LOG,
     CONF_LISTEN_PORT,
+    CONF_MAX_LOG_MB,
     CONF_OFF_MESSAGE,
     CONF_ON_MESSAGE,
+    CONF_REMEMBER_DEVICES,
+    CONF_RETENTION_DAYS,
     CONF_TOPIC_PREFIX,
     CONF_TRANSPORT,
     DEFAULT_LISTEN_PORT,
+    DEFAULT_MAX_LOG_MB,
+    DEFAULT_RETENTION_DAYS,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
     TRANSPORT_MQTT,
@@ -370,12 +376,80 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             if nl
             else "Search for new devices",
             "remove_mqtt_device": "Apparaat verwijderen" if nl else "Remove a device",
+            "storage": "Opslag, log en bewaartermijn"
+            if nl
+            else "Storage, log and retention",
         }
         if await async_ignored_devices(self.hass, self.config_entry):
             choices["restore_mqtt_device"] = (
                 "Verwijderd apparaat herstellen" if nl else "Restore a removed device"
             )
         return self.async_show_menu(step_id="mqtt_menu", menu_options=choices)
+
+    async def async_step_storage(self, user_input=None):
+        """Display scoped file sizes and manage bounded optional storage."""
+        from .storage_management import (
+            async_apply_storage_options,
+            async_storage_report,
+            storage_options,
+        )
+
+        if user_input is not None:
+            await async_apply_storage_options(
+                self.hass, self.config_entry, user_input, user_input["action"]
+            )
+            return self.async_abort(
+                reason={
+                    "save": "storage_saved",
+                    "clear_cache": "cache_cleared",
+                    "clear_log": "log_cleared",
+                    "clear_both": "storage_cleared",
+                }[user_input["action"]]
+            )
+        if hub := self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id):
+            await hub._prune_storage()
+        report = await async_storage_report(self.hass, self.config_entry.entry_id)
+        defaults = storage_options(self.config_entry.options)
+        nl = self.hass.config.language.startswith("nl")
+        if report["ha_log_bytes"] is None:
+            report["ha_log"] = (
+                "Niet uitleesbaar (geen lokaal logbestand)"
+                if nl
+                else "Unavailable (no local log file)"
+            )
+        actions = {
+            "save": "Instellingen opslaan" if nl else "Save settings",
+            "clear_cache": "Apparaatcache wissen" if nl else "Clear device cache",
+            "clear_log": "Eigen BE WAVE-log wissen" if nl else "Clear own BE WAVE log",
+            "clear_both": "Apparaatcache en eigen log wissen"
+            if nl
+            else "Clear device cache and own log",
+        }
+        return self.async_show_form(
+            step_id="storage",
+            description_placeholders={
+                key: report[key] for key in ("cache", "own_log", "ha_log")
+            },
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_REMEMBER_DEVICES, default=defaults[CONF_REMEMBER_DEVICES]
+                    ): bool,
+                    vol.Required(CONF_KEEP_LOG, default=defaults[CONF_KEEP_LOG]): bool,
+                    vol.Required(
+                        CONF_RETENTION_DAYS,
+                        default=defaults.get(
+                            CONF_RETENTION_DAYS, DEFAULT_RETENTION_DAYS
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=3650)),
+                    vol.Required(
+                        CONF_MAX_LOG_MB,
+                        default=defaults.get(CONF_MAX_LOG_MB, DEFAULT_MAX_LOG_MB),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+                    vol.Required("action", default="save"): vol.In(actions),
+                }
+            ),
+        )
 
     async def async_step_search(self, user_input=None):
         """Request discovery without clearing intentional device exclusions."""
@@ -462,7 +536,9 @@ class BeWaveOptionsFlow(config_entries.OptionsFlowWithReload):
             except ValueError:
                 errors[CONF_COMMAND_PREFIX] = "invalid_topic_prefix"
             else:
-                return self.async_create_entry(title="", data=user_input)
+                return self.async_create_entry(
+                    title="", data={**self.config_entry.options, **user_input}
+                )
         defaults = {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
             step_id="mqtt",

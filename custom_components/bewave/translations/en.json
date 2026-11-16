@@ -133,7 +133,8 @@
           "mqtt": "MQTT settings",
           "search": "Search for new devices",
           "remove_mqtt_device": "Remove a device",
-          "restore_mqtt_device": "Restore a removed device"
+          "restore_mqtt_device": "Restore a removed device",
+          "storage": "Storage, log and retention"
         }
       },
       "search": {
@@ -153,6 +154,17 @@
         "data": {
           "device_id": "Device"
         }
+      },
+      "storage": {
+        "title": "Manage BE WAVE storage",
+        "description": "**Own device cache:** {cache}\n\n**Own BE WAVE error log:** {own_log}\n\n**Local Home Assistant log files (read only):** {ha_log}\n\nRetention applies only to this connection’s optional cache and error log. Old data is pruned on startup and hourly. At the size limit, oldest log entries are discarded first. By default only a small device cache is kept; own logging is off. Only warnings and errors may be stored, never routine MQTT payloads.\n\nClearing the cache preserves devices, current live states and intentionally removed-device exclusions. Home Assistant system logs, journals and the history database are not cleared.",
+        "data": {
+          "remember_devices": "Keep device cache on disk",
+          "keep_log": "Keep own error log",
+          "retention_days": "Retention period (days, for example 30)",
+          "max_log_mb": "Maximum own error log size (MB)",
+          "action": "Action"
+        }
       }
     },
     "error": {
@@ -169,7 +181,11 @@
       "device_restored": "Device allowed again. It appears after a new BE WAVE status message.",
       "no_devices": "There are no removable devices in this BE WAVE connection.",
       "no_removed_devices": "There are no removed devices to restore.",
-      "device_not_found": "This device is no longer listed."
+      "device_not_found": "This device is no longer listed.",
+      "storage_saved": "Storage settings saved. New limits have been applied.",
+      "cache_cleared": "Device cache cleared. Devices and exclusions are preserved.",
+      "log_cleared": "Own BE WAVE log cleared.",
+      "storage_cleared": "Device cache and own log cleared. Devices and exclusions are preserved."
     }
   }
 }

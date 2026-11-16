@@ -89,7 +89,7 @@ class BeWaveSwitch(SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Trigger the device."""
-        _LOGGER.info(
+        _LOGGER.debug(
             "BeWave switch %s sending command: %s",
             self._device.name,
             self._device.command_on,
@@ -107,7 +107,7 @@ class BeWaveSwitch(SwitchEntity):
 
     async def async_turn_off(self, **kwargs) -> None:
         """Mirror Homebridge behavior: trigger the same command on OFF."""
-        _LOGGER.info("BeWave switch %s toggled OFF", self._device.name)
+        _LOGGER.debug("BeWave switch %s toggled OFF", self._device.name)
         await self.async_turn_on(**kwargs)
 
     @callback

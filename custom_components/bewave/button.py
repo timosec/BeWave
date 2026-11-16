@@ -69,7 +69,7 @@ class BeWaveTriggerButton(BeWaveBaseEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Send the configured trigger command to BeWave."""
-        _LOGGER.info(
+        _LOGGER.debug(
             "BeWave knop %s sending command: %s",
             self._device.name,
             self._device.command_on,

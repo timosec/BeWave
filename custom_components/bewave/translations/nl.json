@@ -133,7 +133,8 @@
           "mqtt": "MQTT-instellingen",
           "search": "Zoeken naar nieuwe apparaten",
           "remove_mqtt_device": "Apparaat verwijderen",
-          "restore_mqtt_device": "Verwijderd apparaat herstellen"
+          "restore_mqtt_device": "Verwijderd apparaat herstellen",
+          "storage": "Opslag, log en bewaartermijn"
         }
       },
       "search": {
@@ -153,6 +154,17 @@
         "data": {
           "device_id": "Apparaat"
         }
+      },
+      "storage": {
+        "title": "BE WAVE-opslag beheren",
+        "description": "**Eigen apparaatcache:** {cache}\n\n**Eigen BE WAVE-foutlog:** {own_log}\n\n**Lokale Home Assistant-logbestanden (alleen lezen):** {ha_log}\n\nDe bewaartermijn geldt alleen voor de eigen foutlog en optionele apparaatcache. Oudere gegevens worden bij het starten en ieder uur opgeschoond. Als de loglimiet wordt bereikt, vervallen de oudste meldingen eerst. Standaard wordt alleen een kleine apparaatcache bewaard; de eigen foutlog staat uit. Alleen waarschuwingen en fouten kunnen worden bewaard, geen normale MQTT-berichten.\n\nCache wissen verwijdert geen apparaten of live standen. De lijst met bewust verwijderde apparaten blijft bewaard. Home Assistant-systeemlogs, systeemjournaal en de historie-database worden niet gewist.",
+        "data": {
+          "remember_devices": "Apparaatcache op schijf bewaren",
+          "keep_log": "Eigen foutlog bewaren",
+          "retention_days": "Bewaartermijn (dagen, bijvoorbeeld 30)",
+          "max_log_mb": "Maximale grootte eigen foutlog (MB)",
+          "action": "Actie"
+        }
       }
     },
     "error": {
@@ -169,7 +181,11 @@
       "device_restored": "Apparaat weer toegestaan. Het verschijnt na een nieuw statusbericht van BE WAVE.",
       "no_devices": "Er zijn geen verwijderbare apparaten in deze BE WAVE-koppeling.",
       "no_removed_devices": "Er zijn geen eerder verwijderde apparaten om te herstellen.",
-      "device_not_found": "Dit apparaat staat niet meer in de lijst."
+      "device_not_found": "Dit apparaat staat niet meer in de lijst.",
+      "storage_saved": "Opslaginstellingen opgeslagen. Nieuwe grenzen zijn direct toegepast.",
+      "cache_cleared": "Apparaatcache gewist. Apparaten en uitsluitingen blijven behouden.",
+      "log_cleared": "Eigen BE WAVE-log gewist.",
+      "storage_cleared": "Apparaatcache en eigen BE WAVE-log gewist. Apparaten en uitsluitingen blijven behouden."
     }
   }
 }

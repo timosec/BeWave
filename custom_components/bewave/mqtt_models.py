@@ -10,6 +10,7 @@ import json
 import math
 import re
 from dataclasses import dataclass, field
+from time import time
 from typing import Any
 
 
@@ -129,9 +130,12 @@ class MqttDevice:
     model: str
     values: dict[str, Any] = field(default_factory=dict)
     updated: dict[str, float] = field(default_factory=dict)
+    last_seen: float = field(default_factory=time)
 
     def update(self, payload: dict[str, Any], now: float | None) -> None:
         """Merge partial updates without refreshing absent measurements."""
+        if now is not None:
+            self.last_seen = time()
         if isinstance(payload.get("name"), str) and payload["name"].strip():
             self.name = payload["name"].strip()[:200]
         if isinstance(payload.get("type"), str):
@@ -158,6 +162,7 @@ class MqttDevice:
             "name": self.name,
             "model": self.model,
             "fields": sorted(self.values),
+            "last_seen": self.last_seen,
         }
 
     @classmethod
@@ -165,4 +170,5 @@ class MqttDevice:
         """Restore discovered entities, without making old readings live."""
         device = cls(raw["identity"], raw["topic"], raw["name"], raw["model"])
         device.values = {key: None for key in raw["fields"] if key in FIELD_BY_KEY}
+        device.last_seen = raw.get("last_seen", time())
         return device
