@@ -11,7 +11,7 @@ Version **0.10.0** discovers native switches and functional detectors under a BE
 
 Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. Obsolete measurement/diagnostic entities are cleaned up only for this integration’s MQTT entry, preserving functional detectors.
 
-<img width="602" height="2182" alt="image" src="https://github.com/user-attachments/assets/ae3c5172-5dda-4bde-958f-cf965fd14517" />
+<img width="301" height="1091" alt="image" src="https://github.com/user-attachments/assets/a6c1e78a-507b-4275-84de-9c833ef83af2" />
 
 See [the changelog](CHANGELOG.md), [protocol scope](PROTOCOL.md) and [tests](tests/). A real local MQTT test includes switching after a simulated day without status updates. Physical BE WAVE hardware is not controlled by the tests.
 
