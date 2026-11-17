@@ -22,6 +22,7 @@ class BeWaveMqttEntity(Entity):
         self.hub = hub
         self.device = device
         self.field = field
+        self._attr_entity_registry_enabled_default = field.enabled_by_default
         self._attr_unique_id = f"mqtt_{hub.entry_id}_{device.identity}_{field.key}"
         if field.device_class:
             self._attr_device_class = field.device_class

@@ -38,7 +38,7 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Switches and functional detectors are discovered automatically, without diagnostic entities. Status base topic matches BE WAVE Publish topic; command base topic matches Subscribe topic. Example: bewave and bewave/command.",
+        "description": "Switches and detection contacts are enabled automatically. Extra measurements and diagnostics, such as temperature and battery, start disabled and can be enabled per entity. The status base topic must match BE WAVE Publish topic; the command base topic must match Subscribe topic. For example bewave and bewave/command.",
         "data": {
           "name": "Name",
           "topic_prefix": "Status base topic (BE WAVE Publish topic)",

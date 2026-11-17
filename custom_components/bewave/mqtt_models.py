@@ -24,9 +24,19 @@ class Field:
     device_class: str | None = None
     unit: str | None = None
     diagnostic: bool = False
+    enabled_by_default: bool = True
+    measurement: bool = False
 
 
 FIELDS = (
+    Field(
+        "humidity",
+        "Luchtvochtigheid",
+        device_class="humidity",
+        unit="%",
+        enabled_by_default=False,
+        measurement=True,
+    ),
     Field("on_off", "Schakelaar", "switch"),
     Field("motion", "Beweging", "binary_sensor", "motion"),
     Field("magnetic", "Magneetcontact", "binary_sensor", "opening"),
@@ -36,10 +46,138 @@ FIELDS = (
     Field("flood", "Waterdetectie", "binary_sensor", "moisture"),
     Field("glass_break", "Glasbreuk", "binary_sensor", "sound"),
     Field("violation", "Detectie", "binary_sensor"),
+    # Optional information: discover it, but do not create a live state/history
+    # until the user explicitly enables the entity in Home Assistant.
+    Field(
+        "temperature",
+        "Temperatuur",
+        device_class="temperature",
+        unit="°C",
+        enabled_by_default=False,
+        measurement=True,
+    ),
+    Field(
+        "battery",
+        "Batterij",
+        device_class="battery",
+        unit="%",
+        diagnostic=True,
+        enabled_by_default=False,
+        measurement=True,
+    ),
+    Field(
+        "signal",
+        "Signaal",
+        unit="%",
+        diagnostic=True,
+        enabled_by_default=False,
+        measurement=True,
+    ),
+    Field(
+        "voltage_supply",
+        "Voedingsspanning",
+        device_class="voltage",
+        unit="V",
+        diagnostic=True,
+        enabled_by_default=False,
+        measurement=True,
+    ),
+    Field("fw_version", "Firmwareversie", diagnostic=True, enabled_by_default=False),
+    Field(
+        "fw_update_progress",
+        "Firmware-update voortgang",
+        unit="%",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field("errors_count", "Aantal fouten", diagnostic=True, enabled_by_default=False),
+    Field(
+        "errors_memory_count",
+        "Aantal opgeslagen fouten",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "violation_counter", "Detectieteller", diagnostic=True, enabled_by_default=False
+    ),
+    Field("input_state", "Ingangsstatus", diagnostic=True, enabled_by_default=False),
+    Field(
+        "input_sensitivity",
+        "Ingangsgevoeligheid",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field("heater_offset", "Verwarmingsoffset", enabled_by_default=False),
+    Field(
+        "blind_sensor_impulses_time",
+        "Impulstijd rolluiksensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "blind_sensor_impulses_count",
+        "Aantal impulsen rolluiksensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field("mode_of_work", "Werkmodus", diagnostic=True, enabled_by_default=False),
+    Field(
+        "alarm_counting_entry_time",
+        "Inlooptijd actief",
+        "binary_sensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "alarm_counting_exit_time",
+        "Uitlooptijd actief",
+        "binary_sensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "block_unblock",
+        "Geblokkeerd",
+        "binary_sensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "alarm_armed",
+        "Ingeschakeld",
+        "binary_sensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "alarm_detected",
+        "Alarm",
+        "binary_sensor",
+        "problem",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "warning_alarm",
+        "Waarschuwingsalarm",
+        "binary_sensor",
+        "problem",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
+    Field(
+        "fw_update_latest",
+        "Firmware actueel",
+        "binary_sensor",
+        diagnostic=True,
+        enabled_by_default=False,
+    ),
 )
 FIELD_BY_KEY = {item.key: item for item in FIELDS}
 FUNCTIONAL_BINARY_KEYS = {
-    item.key for item in FIELDS if item.platform == "binary_sensor"
+    item.key
+    for item in FIELDS
+    if item.platform == "binary_sensor" and item.enabled_by_default
 }
 
 

@@ -38,7 +38,7 @@
       },
       "mqtt": {
         "title": "BE WAVE via MQTT",
-        "description": "Schakelaars en functionele melders worden automatisch toegevoegd, zonder diagnose-entiteiten. Status-basistopic = Publish topic in de BE WAVE-app. Commando-basistopic = Subscribe topic. Voorbeeld: bewave en bewave/command.",
+        "description": "Schakelaars en detectiecontacten worden automatisch actief toegevoegd. Extra meetwaarden en diagnose, zoals temperatuur en batterij, zijn standaard uitgeschakeld en per entiteit in te schakelen. Het status-basistopic moet overeenkomen met Publish topic in BE WAVE; het commando-basistopic met Subscribe topic. Bijvoorbeeld bewave en bewave/command.",
         "data": {
           "name": "Naam",
           "topic_prefix": "Status-basistopic (Publish topic BE WAVE)",

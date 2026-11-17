@@ -1,19 +1,33 @@
 # BE WAVE — MQTT switches and legacy TCP
 
-Version **0.10.0** discovers native switches and functional detectors under a BE WAVE hub, including motion, magnetic contacts, vibration, smoke and other reported detections. Diagnostic entities are not created. Requires Home Assistant 2026.10.0 or newer.
+Version **0.11.0** discovers native switches and functional detectors under a BE WAVE hub, including motion, magnetic contacts, vibration, smoke and other reported detections. Extra measurements and diagnostics are discovered disabled by default, ready to enable per entity. Requires Home Assistant 2026.10.0 or newer.
 
-**[Nederlandse installatiehandleiding](README-MQTT-NL.md)** · **[Release notes](RELEASE-NOTES-0.10.0.md)**
+**[Nederlandse installatiehandleiding](README-MQTT-NL.md)** · **[Release notes](RELEASE-NOTES-0.11.0.md)**
 
 1. Replace `custom_components/bewave` and restart Home Assistant.
 2. Configure Home Assistant’s MQTT integration.
 3. Add **BE WAVE → MQTT**. Use the status base matching BE WAVE Publish topic and command base matching Subscribe topic; for example `bewave` and `bewave/command`.
-4. Switches and functional detectors are added without battery, signal, firmware or error-counter entities.
+4. Switches and functional detectors are enabled; temperature, humidity, battery, signal, firmware and reported diagnostic fields are discovered disabled by default.
 
-Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. Obsolete measurement/diagnostic entities are cleaned up only for this integration’s MQTT entry, preserving functional detectors.
-
-<img width="301" height="1091" alt="image" src="https://github.com/user-attachments/assets/a6c1e78a-507b-4275-84de-9c833ef83af2" />
+Switches no longer expire after 180 seconds without status changes. A live state remains valid for the current MQTT session. After reconnect/reload a live update is required; a one-time SYNC request asks the hub for statuses. State updates remain driven by device feedback. User enable/disable choices are preserved; optional entities are no longer deleted during startup.
 
 See [the changelog](CHANGELOG.md), [protocol scope](PROTOCOL.md) and [tests](tests/). A real local MQTT test includes switching after a simulated day without status updates. Physical BE WAVE hardware is not controlled by the tests.
+
+## Choose optional information per device
+
+Open a BE WAVE device and show its disabled entities, or go to **Settings → Devices
+& services → Entities**, filter by BE WAVE and include disabled entities. Open the
+wanted entity, select its settings, enable it, and save. Home Assistant may take
+about 30 seconds to load an enabled entity. Then the next live MQTT update supplies
+its value. Temperature, humidity, battery, signal, supply voltage, firmware, error
+counts, input information and alarm status flags are optional read-only entities,
+created only when those known fields are actually reported by the hub.
+
+Detection contacts and existing output controls remain enabled by default. User
+choices, entity IDs and custom names survive reload/restart. Inactive optional
+entities have no live HA state or history. The integration only retains their small
+discovery metadata, never measurement history; own error logging stays off by default.
+Previously enabled or user-disabled entities keep their existing settings.
 
 ## Language and activity
 
@@ -91,15 +105,15 @@ The integration still uses raw TCP under the hood, matching the original Homebri
 
 ## Setup
 
-<img width="365" height="224" alt="image" src="https://github.com/user-attachments/assets/42205247-fa12-4075-97ed-ee1e62825e04" />
+<img width="730" height="383" alt="image" src="https://github.com/user-attachments/assets/42205247-fa12-4075-97ed-ee1e62825e04" />
 
 Enter the IP address of the Hub.
 
-<img width="366" height="192" alt="image" src="https://github.com/user-attachments/assets/d00784ef-0e9c-478b-82b7-75d6c91cbc77" />
+<img width="733" height="385" alt="image" src="https://github.com/user-attachments/assets/d00784ef-0e9c-478b-82b7-75d6c91cbc77" />
 
 First, configure the first zone:
 
-<img width="364" height="492" alt="image" src="https://github.com/user-attachments/assets/5caddc44-c569-4e26-83be-69fce4cffa56" />
+<img width="729" height="985" alt="image" src="https://github.com/user-attachments/assets/5caddc44-c569-4e26-83be-69fce4cffa56" />
 
 1: Zone name</br>
 2: Command to send to the Bewave hub</br>
@@ -107,12 +121,12 @@ First, configure the first zone:
 5: Status (OFF) – used to receive the OFF state from the Bewave hub
 
 
-<img width="365" height="224" alt="image" src="https://github.com/user-attachments/assets/1e29a376-2fb0-4ee3-9797-db2ac4e5dcb0" />
+<img width="730" height="449" alt="image" src="https://github.com/user-attachments/assets/1e29a376-2fb0-4ee3-9797-db2ac4e5dcb0" />
 
 1: To add an new zone </br>
 2: to save the zone
 
 ## Settings in the BeWave Hub: 
 
-<img width="300" height="602" alt="image" src="https://github.com/user-attachments/assets/d023a499-7045-416a-a7fd-33854acb9042" />
+<img width="600" height="1203" alt="image" src="https://github.com/user-attachments/assets/d023a499-7045-416a-a7fd-33854acb9042" />
 

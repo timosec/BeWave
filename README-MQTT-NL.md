@@ -1,11 +1,34 @@
-# BE WAVE via MQTT — versie 0.10.0
+# BE WAVE via MQTT — versie 0.11.0
 
 Deze Home Assistant-integratie voegt schakelaars en functionele melders toe.
 Eén BE WAVE-hoofdapparaat bevat aparte subapparaten. Per apparaat verschijnen
-alleen de bedieningen en detecties die het apparaat meldt. Er zijn geen virtuele
+de bedieningen en detecties die het apparaat meldt. Extra informatie is standaard uitgeschakeld. Er zijn geen virtuele
 IP-apparaten nodig voor ondersteunde fysieke componenten.
 
 Dit is een custom integration voor Home Assistant, geen afzonderlijk Supervisor-add-onproces.
+
+## Zelf extra informatie inschakelen
+
+Detectie-/alarmcontacten en schakelaars blijven standaard actief. Extra informatie,
+zoals temperatuur, luchtvochtigheid, batterij, signaal, voedingsspanning, firmware,
+fouttellers en alarmstatussen, wordt als **uitgeschakelde entiteit** toegevoegd.
+Alleen bekende velden die de hub voor dat apparaat meldt worden aangemaakt.
+
+1. Open het BE WAVE-apparaat en toon de uitgeschakelde entiteiten. Of open
+   **Instellingen → Apparaten en diensten → Entiteiten**, filter op BE WAVE en
+   laat uitgeschakelde entiteiten zien.
+2. Open bijvoorbeeld **Temperatuur**, klik op het tandwiel en zet **Ingeschakeld** aan.
+3. Sla op. Home Assistant kan ongeveer 30 seconden nodig hebben om de entiteit te
+   laden; daarna levert het volgende live MQTT-bericht de waarde.
+
+Dit kan apart per entiteit en apparaat. Eigen namen, entiteit-ID’s en de keuze
+actief/inactief blijven behouden na een herstart. Bestaande actieve schakelaars
+blijven werken. Al eerder ingestelde actieve of inactieve entiteiten worden niet
+teruggezet. Alleen nieuw toegevoegde extra informatie start standaard uitgeschakeld.
+
+Uitgeschakelde entiteiten hebben geen actieve Home Assistant-status of geschiedenis.
+De kleine apparaatcache bewaart alleen metadata, geen meetgeschiedenis. De eigen
+optionele foutlog blijft standaard uitgeschakeld.
 
 ## Taal en activiteit
 
@@ -134,9 +157,9 @@ verwijderd. Automatisch zoeken is beschikbaar voor de MQTT-koppeling.
 | Glasbreuk | `glass_break` |
 | Algemene detectie | `violation` wanneer geen specifiek detectieveld beschikbaar is |
 
-Batterij-, signaal-, firmware-, fout- en andere diagnosegegevens worden niet als
-entiteiten toegevoegd of in de apparaatcache opgeslagen. MQTT kan deze velden
-nog in de berichten bevatten; de integratie negeert ze.
+Batterij-, signaal-, firmware-, fout- en andere ondersteunde diagnosegegevens worden
+standaard uitgeschakeld toegevoegd. Schakel alleen de gewenste informatie in;
+ontvangen meetwaarden worden niet in de apparaatcache opgeslagen.
 
 Bij meerdere kanalen krijgt ieder kanaal zijn eigen subapparaat. Een apparaat
 met bijvoorbeeld zowel beweging als een schakelbare verlichting kan beide
@@ -182,11 +205,11 @@ niet als verse status na herstart of opnieuw verbinden. De getoonde stand
 verandert uitsluitend op basis van een live terugmelding, niet omdat een
 opdracht succesvol naar de broker is gepubliceerd.
 
-## Minder entiteiten bij bijwerken
+## Bestaande entiteiten bij bijwerken
 
-Overbodige meet- en diagnose-entiteiten van eerdere MQTT-versies worden
-opgeruimd. Functionele melders en schakelaars blijven behouden. Deze opruiming
-raakt alleen eigen gegenereerde entiteiten van de betreffende MQTT-koppeling.
+Meet- en diagnose-entiteiten worden niet meer verwijderd. Nieuw herkende extra
+informatie begint uitgeschakeld. Bestaande gebruikerskeuzes, namen, ID’s,
+functionele melders en schakelaars blijven behouden.
 
 ## IP-adres wijzigen
 
@@ -218,7 +241,7 @@ zie [PROTOCOL.md](PROTOCOL.md).
 
 De tests gebruiken Home Assistant 2026.10.4, met onder andere een echte lokale
 MQTT-broker en een gesimuleerd BE WAVE-apparaat. Er wordt gecontroleerd dat een
-schakelaar na een lange periode zonder updates nog kan schakelen, dat schakelaars en functionele melders worden aangemaakt zonder diagnosegegevens en dat oude diagnose-entiteiten worden opgeruimd.
+schakelaar na een lange periode zonder updates nog kan schakelen, dat detecties actief en extra informatie uitgeschakeld worden toegevoegd. Ook het inschakelen van temperatuur, behoud van gebruikerskeuzes na herladen en het ontbreken van actieve standen voor uitgeschakelde entiteiten worden getest.
 Ook configuratie, Nederlands/Engels, herladen, reconnect en IP-wijzigingen worden getest.
 
 Een praktijktest met de eigen BE WAVE-hub blijft nodig.

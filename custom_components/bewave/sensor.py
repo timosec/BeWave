@@ -19,12 +19,12 @@ class BeWaveMqttSensor(BeWaveMqttEntity, SensorEntity):
         super().__init__(hub, device, field)
         if field.unit:
             self._attr_native_unit_of_measurement = field.unit
-        if field.key != "fw_version":
+        if field.measurement:
             self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def native_value(self):
         value = self.device.values.get(self.field.key)
-        if self.field.key == "fw_version":
+        if self.field.key in {"fw_version", "input_state", "mode_of_work"}:
             return value if isinstance(value, str) else None
         return numeric_value(value)
